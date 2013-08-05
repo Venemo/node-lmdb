@@ -3,6 +3,10 @@
     {
       "target_name": "node-lmdb",
       "sources": [
+        "src/liblmdb/mdb.c",
+        "src/liblmdb/lmdb.h",
+        "src/liblmdb/midl.h",
+        "src/liblmdb/midl.c",
         "src/node-lmdb.cpp",
         "src/env.cpp",
         "src/misc.cpp",
@@ -13,7 +17,6 @@
       "conditions": [
         ["OS=='linux'", {
           "ldflags": [
-            "-llmdb",
             "-O3",
             "-rdynamic"
           ],
