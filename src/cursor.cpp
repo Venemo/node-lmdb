@@ -258,24 +258,24 @@ void CursorWrap::setupExports(Handle<Object> exports) {
     cursorTpl->SetClassName(Nan::New<String>("Cursor").ToLocalChecked());
     cursorTpl->InstanceTemplate()->SetInternalFieldCount(1);
     // CursorWrap: Add functions to the prototype
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("close").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::close)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("getCurrentString").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::getCurrentString)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("getCurrentBinary").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::getCurrentBinary)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("getCurrentNumber").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::getCurrentNumber)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("getCurrentBoolean").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::getCurrentBoolean)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToFirst").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToFirst)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToLast").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToLast)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToNext").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToNext)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToPrev").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToPrev)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToKey").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToKey)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToRange").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToRange)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToFirstDup").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToFirstDup)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToLastDup").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToLastDup)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToNextDup").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToNextDup)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToPrevDup").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToPrevDup)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToDup").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToDup)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("goToDupRange").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::goToDupRange)->GetFunction());
-    cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("del").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::del)->GetFunction());
+    Nan::SetPrototypeMethod(cursorTpl, "close", CursorWrap::close);
+    Nan::SetPrototypeMethod(cursorTpl, "getCurrentString", CursorWrap::getCurrentString);
+    Nan::SetPrototypeMethod(cursorTpl, "getCurrentBinary", CursorWrap::getCurrentBinary);
+    Nan::SetPrototypeMethod(cursorTpl, "getCurrentNumber", CursorWrap::getCurrentNumber);
+    Nan::SetPrototypeMethod(cursorTpl, "getCurrentBoolean", CursorWrap::getCurrentBoolean);
+    Nan::SetPrototypeMethod(cursorTpl, "goToFirst", CursorWrap::goToFirst);
+    Nan::SetPrototypeMethod(cursorTpl, "goToLast", CursorWrap::goToLast);
+    Nan::SetPrototypeMethod(cursorTpl, "goToNext", CursorWrap::goToNext);
+    Nan::SetPrototypeMethod(cursorTpl, "goToPrev", CursorWrap::goToPrev);
+    Nan::SetPrototypeMethod(cursorTpl, "goToKey", CursorWrap::goToKey);
+    Nan::SetPrototypeMethod(cursorTpl, "goToRange", CursorWrap::goToRange);
+    Nan::SetPrototypeMethod(cursorTpl, "goToFirstDup", CursorWrap::goToFirstDup);
+    Nan::SetPrototypeMethod(cursorTpl, "goToLastDup", CursorWrap::goToLastDup);
+    Nan::SetPrototypeMethod(cursorTpl, "goToNextDup", CursorWrap::goToNextDup);
+    Nan::SetPrototypeMethod(cursorTpl, "goToPrevDup", CursorWrap::goToPrevDup);
+    Nan::SetPrototypeMethod(cursorTpl, "goToDup", CursorWrap::goToDup);
+    Nan::SetPrototypeMethod(cursorTpl, "goToDupRange", CursorWrap::goToDupRange);
+    Nan::SetPrototypeMethod(cursorTpl, "del", CursorWrap::del);
 
     // Set exports
     exports->Set(Nan::New<String>("Cursor").ToLocalChecked(), cursorTpl->GetFunction());

@@ -232,11 +232,11 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     envTpl->SetClassName(Nan::New<String>("Env").ToLocalChecked());
     envTpl->InstanceTemplate()->SetInternalFieldCount(1);
     // EnvWrap: Add functions to the prototype
-    envTpl->PrototypeTemplate()->Set(Nan::New<String>("open").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::open)->GetFunction());
-    envTpl->PrototypeTemplate()->Set(Nan::New<String>("close").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::close)->GetFunction());
-    envTpl->PrototypeTemplate()->Set(Nan::New<String>("beginTxn").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::beginTxn)->GetFunction());
-    envTpl->PrototypeTemplate()->Set(Nan::New<String>("openDbi").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::openDbi)->GetFunction());
-    envTpl->PrototypeTemplate()->Set(Nan::New<String>("sync").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::sync)->GetFunction());
+    Nan::SetPrototypeMethod(envTpl, "open", EnvWrap::open);
+    Nan::SetPrototypeMethod(envTpl, "close", EnvWrap::close);
+    Nan::SetPrototypeMethod(envTpl, "beginTxn", EnvWrap::beginTxn);
+    Nan::SetPrototypeMethod(envTpl, "openDbi", EnvWrap::openDbi);
+    Nan::SetPrototypeMethod(envTpl, "sync", EnvWrap::sync);
     // TODO: wrap mdb_env_copy too
     // TODO: wrap mdb_env_stat too
     // TODO: wrap mdb_env_info too
@@ -246,19 +246,19 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     txnTpl->SetClassName(Nan::New<String>("Txn").ToLocalChecked());
     txnTpl->InstanceTemplate()->SetInternalFieldCount(1);
     // TxnWrap: Add functions to the prototype
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("commit").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::commit)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("abort").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::abort)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("getString").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::getString)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("getBinary").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::getBinary)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("getNumber").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::getNumber)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("getBoolean").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::getBoolean)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("putString").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::putString)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("putBinary").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::putBinary)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("putNumber").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::putNumber)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("putBoolean").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::putBoolean)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("del").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::del)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("reset").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::reset)->GetFunction());
-    txnTpl->PrototypeTemplate()->Set(Nan::New<String>("renew").ToLocalChecked(), Nan::New<FunctionTemplate>(TxnWrap::renew)->GetFunction());
+    Nan::SetPrototypeMethod(txnTpl, "commit", TxnWrap::commit);
+    Nan::SetPrototypeMethod(txnTpl, "abort", TxnWrap::abort);
+    Nan::SetPrototypeMethod(txnTpl, "getString", TxnWrap::getString);
+    Nan::SetPrototypeMethod(txnTpl, "getBinary", TxnWrap::getBinary);
+    Nan::SetPrototypeMethod(txnTpl, "getNumber", TxnWrap::getNumber);
+    Nan::SetPrototypeMethod(txnTpl, "getBoolean", TxnWrap::getBoolean);
+    Nan::SetPrototypeMethod(txnTpl, "putString", TxnWrap::putString);
+    Nan::SetPrototypeMethod(txnTpl, "putBinary", TxnWrap::putBinary);
+    Nan::SetPrototypeMethod(txnTpl, "putNumber", TxnWrap::putNumber);
+    Nan::SetPrototypeMethod(txnTpl, "putBoolean", TxnWrap::putBoolean);
+    Nan::SetPrototypeMethod(txnTpl, "del", TxnWrap::del);
+    Nan::SetPrototypeMethod(txnTpl, "reset", TxnWrap::reset);
+    Nan::SetPrototypeMethod(txnTpl, "renew", TxnWrap::renew);
     // TODO: wrap mdb_cmp too
     // TODO: wrap mdb_dcmp too
     // TxnWrap: Get constructor
@@ -269,9 +269,9 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     dbiTpl->SetClassName(Nan::New<String>("Dbi").ToLocalChecked());
     dbiTpl->InstanceTemplate()->SetInternalFieldCount(1);
     // DbiWrap: Add functions to the prototype
-    dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("close").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::close)->GetFunction());
-    dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("drop").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::drop)->GetFunction());
-    dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("stat").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::stat)->GetFunction());
+    Nan::SetPrototypeMethod(dbiTpl, "close", DbiWrap::close);
+    Nan::SetPrototypeMethod(dbiTpl, "drop", DbiWrap::drop);
+    Nan::SetPrototypeMethod(dbiTpl, "stat", DbiWrap::stat);
     // TODO: wrap mdb_stat too
     // DbiWrap: Get constructor
     EnvWrap::dbiCtor.Reset( dbiTpl->GetFunction());
