@@ -131,7 +131,7 @@ NAN_METHOD(EnvWrap::open) {
     setFlagFromValue(&flags, MDB_NOMETASYNC, "noMetaSync", false, options);
     setFlagFromValue(&flags, MDB_NOSYNC, "noSync", false, options);
     setFlagFromValue(&flags, MDB_MAPASYNC, "mapAsync", false, options);
-    
+
     // Set MDB_NOTLS to enable multiple read-only transactions on the same thread (in this case, the nodejs main thread)
     flags |= MDB_NOTLS;
 
@@ -252,10 +252,12 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     Nan::SetPrototypeMethod(txnTpl, "getBinary", TxnWrap::getBinary);
     Nan::SetPrototypeMethod(txnTpl, "getNumber", TxnWrap::getNumber);
     Nan::SetPrototypeMethod(txnTpl, "getBoolean", TxnWrap::getBoolean);
+    Nan::SetPrototypeMethod(txnTpl, "get", TxnWrap::get);
     Nan::SetPrototypeMethod(txnTpl, "putString", TxnWrap::putString);
     Nan::SetPrototypeMethod(txnTpl, "putBinary", TxnWrap::putBinary);
     Nan::SetPrototypeMethod(txnTpl, "putNumber", TxnWrap::putNumber);
     Nan::SetPrototypeMethod(txnTpl, "putBoolean", TxnWrap::putBoolean);
+    Nan::SetPrototypeMethod(txnTpl, "put", TxnWrap::put);
     Nan::SetPrototypeMethod(txnTpl, "del", TxnWrap::del);
     Nan::SetPrototypeMethod(txnTpl, "reset", TxnWrap::reset);
     Nan::SetPrototypeMethod(txnTpl, "renew", TxnWrap::renew);
@@ -268,10 +270,14 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     Local<FunctionTemplate> dbiTpl = Nan::New<FunctionTemplate>(DbiWrap::ctor);
     dbiTpl->SetClassName(Nan::New<String>("Dbi").ToLocalChecked());
     dbiTpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+    Nan::SetAccessor(dbiTpl->InstanceTemplate(), Nan::New<String>("env").ToLocalChecked(), DbiWrap::getEnv);
+
     // DbiWrap: Add functions to the prototype
     Nan::SetPrototypeMethod(dbiTpl, "close", DbiWrap::close);
     Nan::SetPrototypeMethod(dbiTpl, "drop", DbiWrap::drop);
     Nan::SetPrototypeMethod(dbiTpl, "stat", DbiWrap::stat);
+
     // TODO: wrap mdb_stat too
     // DbiWrap: Get constructor
     EnvWrap::dbiCtor.Reset( dbiTpl->GetFunction());

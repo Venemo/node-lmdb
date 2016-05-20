@@ -169,6 +169,10 @@ NAN_METHOD(CursorWrap::getCurrentBoolean) {
     return getCommon(info, MDB_GET_CURRENT, nullptr, nullptr, nullptr, valToBoolean);
 }
 
+NAN_METHOD(CursorWrap::getCurrent) {
+    return getCommon(info, MDB_GET_CURRENT, nullptr, nullptr, nullptr, valToVal);
+}
+
 #define MAKE_GET_FUNC(name, op) NAN_METHOD(CursorWrap::name) { return getCommon(info, op); }
 
 MAKE_GET_FUNC(goToFirst, MDB_FIRST);
@@ -204,18 +208,24 @@ static void fillDataFromArg1(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB
         CustomExternalStringResource::writeTo(info[2]->ToString(), &data);
     }
     else if (node::Buffer::HasInstance(info[1])) {
-        data.mv_size = node::Buffer::Length(info[2]);
-        data.mv_data = node::Buffer::Data(info[2]);
+        data.mv_size = node::Buffer::Length(info[2]) + 1;
+        data.mv_data = new char[data.mv_size];
+        char* buffer = (char*)data.mv_data;
+        buffer[0] = TYPE_BINARY;
+        buffer++;
+        memcpy(buffer, node::Buffer::Data(info[2]), data.mv_size - 1);
     }
     else if (info[1]->IsNumber()) {
-        data.mv_size = sizeof(double);
-        data.mv_data = new double;
-        *((double*)data.mv_data) = info[1]->ToNumber()->Value();
+        data.mv_size = sizeof(NumberData);
+        data.mv_data = new NumberData;
+        ((NumberData*)data.mv_data)->type = TYPE_NUMBER;
+        ((NumberData*)data.mv_data)->data = info[2]->ToNumber()->Value();
     }
     else if (info[1]->IsBoolean()) {
-        data.mv_size = sizeof(double);
-        data.mv_data = new bool;
-        *((bool*)data.mv_data) = info[1]->ToBoolean()->Value();
+        data.mv_size = sizeof(BooleanData);
+        data.mv_data = new BooleanData;
+        ((BooleanData*)data.mv_data)->type = TYPE_BOOLEAN;
+        ((BooleanData*)data.mv_data)->data = info[2]->ToBoolean()->Value();
     }
     else {
         Nan::ThrowError("Invalid data type.");
@@ -228,12 +238,13 @@ static void freeDataFromArg1(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB
     }
     else if (node::Buffer::HasInstance(info[1])) {
         // I think the data is owned by the node::Buffer so we don't need to free it - need to clarify
+        //delete[] (char*)data.mv_data;
     }
     else if (info[1]->IsNumber()) {
-        delete (double*)data.mv_data;
+        delete (NumberData*)data.mv_data;
     }
     else if (info[1]->IsBoolean()) {
-        delete (bool*)data.mv_data;
+        delete (BooleanData*)data.mv_data;
     }
     else {
         Nan::ThrowError("Invalid data type.");
@@ -263,6 +274,7 @@ void CursorWrap::setupExports(Handle<Object> exports) {
     Nan::SetPrototypeMethod(cursorTpl, "getCurrentBinary", CursorWrap::getCurrentBinary);
     Nan::SetPrototypeMethod(cursorTpl, "getCurrentNumber", CursorWrap::getCurrentNumber);
     Nan::SetPrototypeMethod(cursorTpl, "getCurrentBoolean", CursorWrap::getCurrentBoolean);
+    Nan::SetPrototypeMethod(cursorTpl, "getCurrent", CursorWrap::getCurrent);
     Nan::SetPrototypeMethod(cursorTpl, "goToFirst", CursorWrap::goToFirst);
     Nan::SetPrototypeMethod(cursorTpl, "goToLast", CursorWrap::goToLast);
     Nan::SetPrototypeMethod(cursorTpl, "goToNext", CursorWrap::goToNext);

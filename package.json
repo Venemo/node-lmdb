@@ -17,7 +17,7 @@
   "version": "0.4.0",
   "main": "./index.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha test/** --recursive"
+    "test": "./node_modules/.bin/mocha test/**/*.js --recursive"
   },
   "gypfile": true,
   "dependencies": {

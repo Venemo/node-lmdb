@@ -26,6 +26,7 @@
 using namespace v8;
 using namespace node;
 
+
 TxnWrap::TxnWrap(MDB_env *env, MDB_txn *txn) {
     this->env = env;
     this->txn = txn;
@@ -181,6 +182,10 @@ NAN_METHOD(TxnWrap::getBoolean) {
     return getCommon(info, valToBoolean);
 }
 
+NAN_METHOD(TxnWrap::get) {
+    return getCommon(info, valToVal);
+}
+
 Nan::NAN_METHOD_RETURN_TYPE TxnWrap::putCommon(Nan::NAN_METHOD_ARGS_TYPE info, void (*fillFunc)(Nan::NAN_METHOD_ARGS_TYPE info, MDB_val&), void (*freeData)(MDB_val&)) {
     Nan::HandleScope scope;
 
@@ -222,31 +227,55 @@ NAN_METHOD(TxnWrap::putString) {
 
 NAN_METHOD(TxnWrap::putBinary) {
     return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
-        data.mv_size = node::Buffer::Length(info[2]);
-        data.mv_data = node::Buffer::Data(info[2]);
-    }, [](MDB_val &) -> void {
+        // first byte is data type
+        data.mv_size = node::Buffer::Length(info[2]) + 1;
+        data.mv_data = new char[data.mv_size];
+        char* buffer = (char*)data.mv_data;
+        *buffer = TYPE_BINARY;
+        buffer++;
+        memcpy(buffer, node::Buffer::Data(info[2]), data.mv_size - 1);
+    }, [](MDB_val &data) -> void {
         // I think the data is owned by the node::Buffer so we don't need to free it - need to clarify
+        delete[] (char*)data.mv_data;
     });
 }
 
 NAN_METHOD(TxnWrap::putNumber) {
     return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
-        data.mv_size = sizeof(double);
-        data.mv_data = new double;
-        *((double*)data.mv_data) = info[2]->ToNumber()->Value();
+        data.mv_size = sizeof(NumberData);
+        data.mv_data = new NumberData;
+        ((NumberData*)data.mv_data)->type = TYPE_NUMBER;
+        ((NumberData*)data.mv_data)->data = info[2]->ToNumber()->Value();
     }, [](MDB_val &data) -> void {
-        delete (double*)data.mv_data;
+        delete (NumberData*)data.mv_data;
     });
 }
 
 NAN_METHOD(TxnWrap::putBoolean) {
     return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
-        data.mv_size = sizeof(double);
-        data.mv_data = new bool;
-        *((bool*)data.mv_data) = info[2]->ToBoolean()->Value();
+        data.mv_size = sizeof(BooleanData);
+        data.mv_data = new BooleanData;
+        ((BooleanData*)data.mv_data)->type = TYPE_BOOLEAN;
+        ((BooleanData*)data.mv_data)->data = info[2]->ToBoolean()->Value();
     }, [](MDB_val &data) -> void {
-        delete (bool*)data.mv_data;
+        delete (BooleanData*)data.mv_data;
     });
+}
+
+NAN_METHOD(TxnWrap::put) {
+    if (info[2]->IsNumber()) {
+        return putNumber(info);
+    }
+    if (info[2]->IsBoolean()) {
+        return putBoolean(info);
+    }
+    if (info[2]->IsString()) {
+        return putString(info);
+    }
+    if (node::Buffer::HasInstance(info[2])) {
+        return putBinary(info);
+    }
+    return Nan::ThrowError("Unsupported data type.");
 }
 
 NAN_METHOD(TxnWrap::del) {

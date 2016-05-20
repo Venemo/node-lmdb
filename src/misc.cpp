@@ -97,18 +97,34 @@ Local<Value> valToString(MDB_val &data) {
 Local<Value> valToBinary(MDB_val &data) {
     // FIXME: It'd be better not to copy buffers, but I'm not sure
     // about the ownership semantics of MDB_val, so let' be safe.
+    char* buffer = (char*)data.mv_data;
+    buffer++;
     return Nan::CopyBuffer(
-        (char*)data.mv_data,
-        data.mv_size
+        buffer,
+        data.mv_size - 1
     ).ToLocalChecked();
 }
 
 Local<Value> valToNumber(MDB_val &data) {
-    return Nan::New<Number>(*((double*)data.mv_data));
+    return Nan::New<Number>(((NumberData*)data.mv_data)->data);
 }
 
 Local<Value> valToBoolean(MDB_val &data) {
-    return Nan::New<Boolean>(*((bool*)data.mv_data));
+    return Nan::New<Boolean>(((BooleanData*)data.mv_data)->data);
+}
+
+Local<Value> valToVal(MDB_val &data) {
+    char type = *(char*)data.mv_data;
+    if (type == TYPE_NUMBER) {
+        return valToNumber(data);
+    }
+    if (type == TYPE_BOOLEAN) {
+        return valToBoolean(data);
+    }
+    if (type == TYPE_BINARY) {
+        return valToBinary(data);
+    }
+    return valToString(data);
 }
 
 void consoleLog(const char *msg) {
@@ -137,27 +153,34 @@ void consoleLogN(int n) {
 }
 
 void CustomExternalStringResource::writeTo(Handle<String> str, MDB_val *val) {
-    unsigned int l = str->Length() + 1;
+    // first item is data type, string starts from position 1
+    unsigned int l = str->Length() + 2;
     uint16_t *d = new uint16_t[l];
-    str->Write(d);
+    uint16_t *d2 = d;
+    d2++;
+    str->Write(d2);
     d[l - 1] = 0;
+    d[0] = 0;
+    *(char*)d = TYPE_STRING;
 
     val->mv_data = d;
     val->mv_size = l * sizeof(uint16_t);
 }
 
 CustomExternalStringResource::CustomExternalStringResource(MDB_val *val) {
+    uint16_t *d2 = (uint16_t*)val->mv_data;
+    d2++;
     // The UTF-16 data
-    this->d = (uint16_t*)(val->mv_data);
+    this->d = d2;
     // Number of UTF-16 characters in the string
-    this->l = (val->mv_size / sizeof(uint16_t) - 1);
+    this->l = (val->mv_size / sizeof(uint16_t) - 2);
 }
 
 CustomExternalStringResource::~CustomExternalStringResource() { }
 
 void CustomExternalStringResource::Dispose() {
     // No need to do anything, the data is owned by LMDB, not us
-    
+
     // But actually need to delete the string resource itself:
     // the docs say that "The default implementation will use the delete operator."
     // while initially I thought this means using delete on the string,

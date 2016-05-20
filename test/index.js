@@ -1,4 +1,5 @@
 'use strict';
+/* global describe, before, it, after */
 
 var path = require('path');
 var mkdirp = require('mkdirp');
@@ -15,14 +16,14 @@ describe('Node.js LMDB Bindings', function() {
     // cleanup previous test directory
     rimraf(testDirPath, function(err) {
       if (err) {
-	return done(err);
+        return done(err);
       }
       // setup clean directory
       mkdirp(testDirPath, function(err) {
-	if (err) {
-	  return done(err);
-	}
-	done();
+        if (err) {
+          return done(err);
+        }
+        done();
       });
     });
   });
@@ -43,8 +44,8 @@ describe('Node.js LMDB Bindings', function() {
     before(function() {
       env = new lmdb.Env();
       env.open({
-	path: testDirPath,
-	maxDbs: 10
+        path: testDirPath,
+        maxDbs: 10
       });
     });
     after(function() {
@@ -52,8 +53,8 @@ describe('Node.js LMDB Bindings', function() {
     });
     it('will open a database, begin a transaction and get/put/delete data', function() {
       var dbi = env.openDbi({
-	name: 'mydb1',
-	create: true
+        name: 'mydb1',
+        create: true
       });
       var txn = env.beginTxn();
       var data = txn.getString(dbi, 'hello');
@@ -69,8 +70,8 @@ describe('Node.js LMDB Bindings', function() {
     });
     it('will get statistics for a database', function() {
       var dbi = env.openDbi({
-	name: 'mydb2',
-	create: true
+        name: 'mydb2',
+        create: true
       });
       var txn = env.beginTxn();
       var stat = dbi.stat(txn);
@@ -90,12 +91,12 @@ describe('Node.js LMDB Bindings', function() {
     before(function() {
       env = new lmdb.Env();
       env.open({
-	path: testDirPath,
-	maxDbs: 10
+        path: testDirPath,
+        maxDbs: 10
       });
       dbi = env.openDbi({
-	name: 'mydb3',
-	create: true
+        name: 'mydb3',
+        create: true
       });
       txn = env.beginTxn();
     });
@@ -144,19 +145,80 @@ describe('Node.js LMDB Bindings', function() {
       should.equal(data4, null);
     });
   });
+  describe('Auto data types', function() {
+    var env;
+    var dbi;
+    var txn;
+    before(function() {
+      env = new lmdb.Env();
+      env.open({
+        path: testDirPath,
+        maxDbs: 10
+      });
+      dbi = env.openDbi({
+        name: 'mydb3',
+        create: true
+      });
+      txn = env.beginTxn();
+    });
+    after(function() {
+      txn.commit();
+      dbi.close();
+      env.close();
+    });
+    it('string', function() {
+      txn.put(dbi, 'key1', 'Hello world!');
+      var data = txn.get(dbi, 'key1');
+      data.should.equal('Hello world!');
+      txn.del(dbi, 'key1');
+      var data2 = txn.get(dbi, 'key1');
+      should.equal(data2, null);
+    });
+    it('binary', function() {
+      var buffer = new Buffer('48656c6c6f2c20776f726c6421', 'hex');
+      txn.put(dbi, 'key2', buffer);
+      var data = txn.get(dbi, 'key2');
+      data.should.deep.equal(buffer);
+      txn.del(dbi, 'key2');
+      var data2 = txn.get(dbi, 'key2');
+      should.equal(data2, null);
+    });
+    it('number', function() {
+      txn.put(dbi, 'key3', 9007199254740991);
+      var data = txn.get(dbi, 'key3');
+      data.should.equal(Math.pow(2, 53) - 1);
+      txn.del(dbi, 'key3');
+      var data2 = txn.get(dbi, 'key3');
+      should.equal(data2, null);
+    });
+    it('boolean', function() {
+      txn.putBoolean(dbi, 'key4', true);
+      var data = txn.get(dbi, 'key4');
+      data.should.equal(true);
+      txn.put(dbi, 'key5', false);
+      var data2 = txn.get(dbi, 'key5');
+      data2.should.equal(false);
+      txn.del(dbi, 'key4');
+      txn.del(dbi, 'key5');
+      var data3 = txn.get(dbi, 'key4');
+      var data4 = txn.get(dbi, 'key5');
+      should.equal(data3, null);
+      should.equal(data4, null);
+    });
+  });
   describe('Multiple transactions', function() {
     var env;
     var dbi;
     before(function() {
       env = new lmdb.Env();
       env.open({
-	path: testDirPath,
-	maxDbs: 10
+        path: testDirPath,
+        maxDbs: 10
       });
       dbi = env.openDbi({
-	name: 'mydb4',
-	create: true,
-	keyIsUint32: true
+        name: 'mydb4',
+        create: true,
+        keyIsUint32: true
       });
       var txn = env.beginTxn();
       txn.putString(dbi, 1, 'Hello1');
@@ -194,7 +256,7 @@ describe('Node.js LMDB Bindings', function() {
     it('readonly transaction will throw if tries to write', function() {
       var readTxn = env.beginTxn({readOnly: true});
       (function() {
-	readTxn.putString(dbi, 2, 'hööhh')
+        readTxn.putString(dbi, 2, 'hööhh');
       }).should.throw('Permission denied');
       readTxn.abort();
     });
@@ -207,23 +269,23 @@ describe('Node.js LMDB Bindings', function() {
     before(function() {
       env = new lmdb.Env();
       env.open({
-	path: testDirPath,
-	maxDbs: 10,
-	mapSize: 16 * 1024 * 1024 * 1024
+        path: testDirPath,
+        maxDbs: 10,
+        mapSize: 16 * 1024 * 1024 * 1024
       });
       dbi = env.openDbi({
-	name: 'mydb5',
-	create: true,
-	dupSort: true,
-	keyIsUint32: true
+        name: 'mydb5',
+        create: true,
+        dupSort: true,
+        keyIsUint32: true
       });
       var txn = env.beginTxn();
       var c = 0;
       while(c < total) {
-	var buffer = new Buffer(new Array(8));
-	buffer.writeDoubleBE(c);
-	txn.putBinary(dbi, c, buffer);
-	c++;
+        var buffer = new Buffer(new Array(8));
+        buffer.writeDoubleBE(c);
+        txn.putBinary(dbi, c, buffer);
+        c++;
       }
       txn.commit();
     });
@@ -236,21 +298,21 @@ describe('Node.js LMDB Bindings', function() {
       var cursor = new lmdb.Cursor(txn, dbi);
       cursor.goToKey(40);
       cursor.getCurrentBinary(function(key, value) {
-	key.should.equal(40);
-	value.readDoubleBE().should.equal(40);
+        key.should.equal(40);
+        value.readDoubleBE().should.equal(40);
       });
 
       var values = [];
       cursor.goToKey(0);
       function iterator() {
-	cursor.getCurrentBinary(function(key, value) {
-	  value.readDoubleBE().should.equal(values.length);
-	  values.push(value);
-	});
-	cursor.goToNext();
-	if (values.length < total) {
-	  fastFuture(iterator);
-	}
+        cursor.getCurrentBinary(function(key, value) {
+          value.readDoubleBE().should.equal(values.length);
+          values.push(value);
+        });
+        cursor.goToNext();
+        if (values.length < total) {
+          fastFuture(iterator);
+        }
       }
       cursor.close();
       txn.abort();
@@ -260,13 +322,13 @@ describe('Node.js LMDB Bindings', function() {
       var cursor = new lmdb.Cursor(txn, dbi);
       cursor.goToFirst();
       cursor.getCurrentBinary(function(key, value) {
-	key.should.equal(0);
-	value.readDoubleBE().should.equal(0);
+        key.should.equal(0);
+        value.readDoubleBE().should.equal(0);
       });
       cursor.goToLast();
       cursor.getCurrentBinary(function(key, value) {
-	key.should.equal(total - 1);
-	value.readDoubleBE().should.equal(total - 1);
+        key.should.equal(total - 1);
+        value.readDoubleBE().should.equal(total - 1);
       });
       cursor.close();
       txn.abort();
