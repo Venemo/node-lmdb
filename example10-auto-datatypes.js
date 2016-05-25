@@ -88,6 +88,21 @@ try {
     console.log(e.message);
 }
 
+// Example for getting/putting/deleting array data
+// ----------
+try {
+    var arrayData = txn.get(dbi, "key7");
+    // Print the boolean
+    console.log("array data: ", arrayData, typeof arrayData);
+    // Toggle the value
+    if (arrayData === null)
+        txn.put(dbi, "key7", [1, 2, 3, 4, 5]);
+    else
+        txn.del(dbi, "key7");
+} catch (e) {
+    console.log(e.message);
+}
+
 console.log("");
 console.log("Run this example again to see the alterations on the database!");
 

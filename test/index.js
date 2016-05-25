@@ -192,7 +192,7 @@ describe('Node.js LMDB Bindings', function() {
       should.equal(data2, null);
     });
     it('boolean', function() {
-      txn.putBoolean(dbi, 'key4', true);
+      txn.put(dbi, 'key4', true);
       var data = txn.get(dbi, 'key4');
       data.should.equal(true);
       txn.put(dbi, 'key5', false);
@@ -204,6 +204,21 @@ describe('Node.js LMDB Bindings', function() {
       var data4 = txn.get(dbi, 'key5');
       should.equal(data3, null);
       should.equal(data4, null);
+    });
+    it('object', function() {
+      var obj = {a: 'Hello world!', b: 9007199254740991, c: true};
+      txn.put(dbi, 'key6', obj);
+      var data = txn.get(dbi, 'key6');
+      data.should.deep.equal(obj);
+      txn.del(dbi, 'key6');
+      var data2 = txn.get(dbi, 'key6');
+      should.equal(data2, null);
+    });
+    it('null', function() {
+      txn.put(dbi, 'key7', true);
+      txn.put(dbi, 'key7', null);
+      var data = txn.get(dbi, 'key7');
+      should.equal(data, null);
     });
   });
   describe('Multiple transactions', function() {

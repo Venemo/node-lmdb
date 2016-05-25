@@ -225,6 +225,15 @@ NAN_METHOD(TxnWrap::putString) {
     });
 }
 
+NAN_METHOD(TxnWrap::putObject) {
+    return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
+        Local<String> str = ValueToJson(info[2]);
+        CustomExternalStringResource::writeTo(str, &data, TYPE_OBJECT);
+    }, [](MDB_val &data) -> void {
+        delete[] (uint16_t*)data.mv_data;
+    });
+}
+
 NAN_METHOD(TxnWrap::putBinary) {
     return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
         // first byte is data type
@@ -272,10 +281,16 @@ NAN_METHOD(TxnWrap::put) {
     if (info[2]->IsString()) {
         return putString(info);
     }
+    if (info[2]->IsNull()) {
+        return del(info);
+    }
     if (node::Buffer::HasInstance(info[2])) {
         return putBinary(info);
     }
-    return Nan::ThrowError("Unsupported data type.");
+    if (info[2]->IsObject()) {
+        return putObject(info);
+    }
+    return Nan::ThrowError("Invalid data type.");
 }
 
 NAN_METHOD(TxnWrap::del) {
@@ -297,7 +312,7 @@ NAN_METHOD(TxnWrap::del) {
     int rc = mdb_del(tw->txn, dw->dbi, &key, nullptr);
     freeKey(key);
 
-    if (rc != 0) {
+    if (rc != 0 && !info[2]->IsNull()) {
         return Nan::ThrowError(mdb_strerror(rc));
     }
 

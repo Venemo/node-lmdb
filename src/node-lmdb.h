@@ -33,6 +33,13 @@
 
 #define NanReturnThis() return info.GetReturnValue().Set(info.This())
 
+#define TYPE_UNKNOWN 0
+#define TYPE_BINARY 1
+#define TYPE_STRING 2
+#define TYPE_NUMBER 3
+#define TYPE_BOOLEAN 4
+#define TYPE_OBJECT 5
+
 using namespace v8;
 using namespace node;
 
@@ -283,6 +290,18 @@ public:
     static NAN_METHOD(putString);
 
     /*
+        Puts object data into a database.
+        (Wrapper for `mdb_put`)
+
+        Parameters:
+
+        * database instance created with calling `openDbi()` on an `Env` instance
+        * key for which the value is stored
+        * data to store for the given key
+    */
+    static NAN_METHOD(putObject);
+
+    /*
         Puts binary data (Node.js Buffer) into a database.
         (Wrapper for `mdb_put`)
 
@@ -495,7 +514,7 @@ public:
 
         * Callback that accepts the key and value
     */
-    static NAN_METHOD(getCurrent);
+    static NAN_METHOD(get);
 
     /*
         Asks the cursor to go to the first key-data pair in the database.
@@ -590,14 +609,8 @@ public:
     const uint16_t *data() const;
     size_t length() const;
 
-    static void writeTo(Handle<String> str, MDB_val *val);
+    static void writeTo(Handle<String> str, MDB_val *val, char type = TYPE_STRING);
 };
-
-#define TYPE_UNKNOWN 0
-#define TYPE_BINARY 1
-#define TYPE_STRING 2
-#define TYPE_NUMBER 3
-#define TYPE_BOOLEAN 4
 
 struct NumberData {
     char type;
@@ -608,5 +621,9 @@ struct BooleanData {
     char type;
     bool data;
 };
+
+void attachJson();
+Local<String> ValueToJson(Handle<Value> value);
+Local<Value> ValueFromJson(Handle<String> json);
 
 #endif // NODE_LMDB_H

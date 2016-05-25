@@ -113,6 +113,12 @@ Local<Value> valToBoolean(MDB_val &data) {
     return Nan::New<Boolean>(((BooleanData*)data.mv_data)->data);
 }
 
+Local<Value> valToObject(MDB_val &data) {
+    auto resource = new CustomExternalStringResource(&data);
+    auto str = Nan::New<v8::String>(resource);
+    return ValueFromJson(str.ToLocalChecked());
+}
+
 Local<Value> valToVal(MDB_val &data) {
     char type = *(char*)data.mv_data;
     if (type == TYPE_NUMBER) {
@@ -121,10 +127,13 @@ Local<Value> valToVal(MDB_val &data) {
     if (type == TYPE_BOOLEAN) {
         return valToBoolean(data);
     }
+    if (type == TYPE_STRING) {
+        return valToString(data);
+    }
     if (type == TYPE_BINARY) {
         return valToBinary(data);
     }
-    return valToString(data);
+    return valToObject(data);
 }
 
 void consoleLog(const char *msg) {
@@ -152,7 +161,7 @@ void consoleLogN(int n) {
     consoleLog(c);
 }
 
-void CustomExternalStringResource::writeTo(Handle<String> str, MDB_val *val) {
+void CustomExternalStringResource::writeTo(Handle<String> str, MDB_val *val, char type) {
     // first item is data type, string starts from position 1
     unsigned int l = str->Length() + 2;
     uint16_t *d = new uint16_t[l];
@@ -161,7 +170,7 @@ void CustomExternalStringResource::writeTo(Handle<String> str, MDB_val *val) {
     str->Write(d2);
     d[l - 1] = 0;
     d[0] = 0;
-    *(char*)d = TYPE_STRING;
+    *(char*)d = type;
 
     val->mv_data = d;
     val->mv_size = l * sizeof(uint16_t);
@@ -194,4 +203,38 @@ const uint16_t *CustomExternalStringResource::data() const {
 
 size_t CustomExternalStringResource::length() const {
     return this->l;
+}
+
+v8::Persistent<v8::Object> json_module_;
+v8::Persistent<v8::Function> json_stringify_;
+v8::Persistent<v8::Function> json_parse_;
+
+void attachJson() {
+    auto isolate = Isolate::GetCurrent();
+    auto global = isolate->GetCurrentContext()->Global();
+    auto json_module = Local<Object>::Cast(
+        Nan::Get(global, Nan::New("JSON").ToLocalChecked()).ToLocalChecked());
+    auto json_stringify = Local<Function>::Cast(
+        Nan::Get(json_module,
+        Nan::New("stringify").ToLocalChecked()).ToLocalChecked());
+    auto json_parse = Local<Function>::Cast(
+        Nan::Get(json_module,
+        Nan::New("parse").ToLocalChecked()).ToLocalChecked());
+    json_module_.Reset(isolate, json_module);
+    json_stringify_.Reset(isolate, json_stringify);
+    json_parse_.Reset(isolate, json_parse);
+}
+
+Local<String> ValueToJson(Handle<Value> value) {
+  auto module = Nan::New<v8::Object>(json_module_);
+  auto stringify = Nan::New<v8::Function>(json_stringify_);
+  Local<Value> argv[] = { value };
+  return Local<String>::Cast(stringify->Call(module, 1, argv));
+}
+
+Local<Value> ValueFromJson(Handle<String> json) {
+  auto module = Nan::New<v8::Object>(json_module_);
+  auto parse = Nan::New<v8::Function>(json_parse_);
+  Local<Value> argv[] = { json };
+  return parse->Call(module, 1, argv);
 }

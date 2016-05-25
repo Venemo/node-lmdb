@@ -284,4 +284,6 @@ void EnvWrap::setupExports(Handle<Object> exports) {
 
     // Set exports
     exports->Set(Nan::New<String>("Env").ToLocalChecked(), envTpl->GetFunction());
+
+    attachJson();
 }
