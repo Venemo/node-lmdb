@@ -26,7 +26,8 @@ Here are the main highlights of LMDB, for more, visit http://symas.com/mdb :)
 
 * Tested and works on Linux (author uses Fedora 20)
 * Tested and works on Mac OS X - see https://github.com/Venemo/node-lmdb/issues/3
-* **Not yet tested** on Windows - see https://github.com/Venemo/node-lmdb/issues/2
+* Tested and works on Windows (using Windows 10 with MSVS 2015 - see https://github.com/Venemo/node-lmdb/issues/2
+
 
 ### License info
 
@@ -86,10 +87,9 @@ dbi.close();
 
 The basic unit of work in LMDB is a transaction, which is called `Txn` for short. Here is how you operate with your data.
 Every piece of data in LMDB is referred to by a **key**.
-You can use the methods `getString()`, `getBinary()`, `getNumber()` and `getBoolean()` to retrieve something,
-`putString()`, `putBinary()`, `putNumber()` and `putBoolean()` to store something and `del()` to delete something.
+You can use the methods `getString()`, `getBinary()`, `getNumber()`, `getBoolean()` and `get` to retrieve something,
+`putString()`, `putBinary()`, `putNumber()`, `putBoolean()` and `put` to store something and `del()` to delete something.
 
-Currently **only string, binary, number and boolean values are supported**, use `JSON.stringify` and `JSON.parse` for complex data structures.
 Because of the nature of LMDB, the data returned by `txn.getString()` and `txn.getBinary()` is only valid until the next `put` operation or the end of the transaction.
 If you need to use the data *later*, you will have to copy it for yourself.
 
@@ -110,6 +110,29 @@ else {
 
 txn.putString(dbi, 2, "Yes, it's this simple!");
 txn.commit();
+```
+
+#### Auto data types
+
+`get` and `put` methods supports the following data types:
+
+- Number
+- Boolean
+- String
+- Buffer
+- Object
+- Array
+
+Putting `null` as value is equal to deleting a record.
+
+```
+txn.put(dbi, "key1", 42);
+txn.put(dbi, "key2", true);
+txn.put(dbi, "key3", "Hello world!");
+txn.put(dbi, "key4", {a: 1, b: "abcde"});
+txn.put(dbi, "key5", [1, 2, 3, 4, 5]);
+txn.put(dbi, "key6", Buffer.from([1, 2, 3]));
+txn.put(dbi, "key7", null); // is equal to txn.del(dbi, "key7");
 ```
 
 ### Basic concepts
@@ -141,6 +164,7 @@ The basic examples we currently have:
 * `example5-dupsort.js` - shows how to use a `dupSort` database with cursors
 * `example6-asyncio.js` - shows how to use the fastest (but also most dangerous) way for async IO
 * `example7-largedb.js` - shows how to work with an insanely large database
+* `example10-auto-datatypes.js` - shows how to work with auto data types
 
 Advanced examples:
 
@@ -149,7 +173,6 @@ Advanced examples:
 
 ### Limitations of node-lmdb
 
-* **Only string, binary, number and boolean values are supported.** If you want to store complex data structures, use `JSON.stringify` before putting it into the database and `JSON.parse` when you retrieve the data.
 * **Only string and unsigned integer keys are supported.** Default is string, specify `keyIsUint32: true` to `openDbi` for unsigned integer. It would make the API too complicated to support more data types for keys.
 * Because of the nature of LMDB, the data returned by `txn.getString()` and `txn.getBinary()` is **only valid until the next `put` operation or the end of the transaction**. If you need to use the data *later*, you will have to copy it for yourself.
 * Fixed address map (called `MDB_FIXEDMAP` in C) features are **not exposed** by this binding because they are highly experimental

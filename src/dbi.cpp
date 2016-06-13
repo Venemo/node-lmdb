@@ -197,3 +197,11 @@ NAN_METHOD(DbiWrap::stat) {
 
     info.GetReturnValue().Set(obj);
 }
+
+NAN_GETTER(DbiWrap::getEnv) {
+    Nan::HandleScope scope;
+
+    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info.This());
+
+    info.GetReturnValue().Set(dw->ew->handle());
+}

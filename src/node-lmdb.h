@@ -33,6 +33,13 @@
 
 #define NanReturnThis() return info.GetReturnValue().Set(info.This())
 
+#define TYPE_UNKNOWN 0
+#define TYPE_BINARY 1
+#define TYPE_STRING 2
+#define TYPE_NUMBER 3
+#define TYPE_BOOLEAN 4
+#define TYPE_OBJECT 5
+
 using namespace v8;
 using namespace node;
 
@@ -52,6 +59,7 @@ Local<Value> valToString(MDB_val &data);
 Local<Value> valToBinary(MDB_val &data);
 Local<Value> valToNumber(MDB_val &data);
 Local<Value> valToBoolean(MDB_val &data);
+Local<Value> valToVal(MDB_val &data);
 
 /*
     `Env`
@@ -256,6 +264,20 @@ public:
     static NAN_METHOD(getBoolean);
 
     /*
+        Gets data associated with the given key from a database. You need to open a database in the environment to use this.
+        When data is Number or Boolean this method will copy the value out of the database.
+        When data is String or Buffer this method is zero-copy and the return value can only be used until the next put
+        operation or until the transaction is committed or aborted.
+        (Wrapper for `mdb_get`)
+
+        Parameters:
+
+        * database instance created with calling `openDbi()` on an `Env` instance
+        * key for which the value is retrieved
+    */
+    static NAN_METHOD(get);
+
+    /*
         Puts string data (JavaScript string type) into a database.
         (Wrapper for `mdb_put`)
 
@@ -266,6 +288,18 @@ public:
         * data to store for the given key
     */
     static NAN_METHOD(putString);
+
+    /*
+        Puts object data into a database.
+        (Wrapper for `mdb_put`)
+
+        Parameters:
+
+        * database instance created with calling `openDbi()` on an `Env` instance
+        * key for which the value is stored
+        * data to store for the given key
+    */
+    static NAN_METHOD(putObject);
 
     /*
         Puts binary data (Node.js Buffer) into a database.
@@ -302,6 +336,18 @@ public:
         * data to store for the given key
     */
     static NAN_METHOD(putBoolean);
+
+    /*
+        Puts data into a database.
+        (Wrapper for `mdb_put`)
+
+        Parameters:
+
+        * database instance created with calling `openDbi()` on an `Env` instance
+        * key for which the value is stored
+        * data to store for the given key
+    */
+    static NAN_METHOD(put);
 
     /*
         Deletes data with the given key from the database.
@@ -360,6 +406,8 @@ public:
     static NAN_METHOD(drop);
 
     static NAN_METHOD(stat);
+
+    static NAN_GETTER(getEnv);
 };
 
 /*
@@ -459,6 +507,16 @@ public:
     static NAN_METHOD(getCurrentBoolean);
 
     /*
+        Gets the current key-data pair that the cursor is pointing to.
+        (Wrapper for `mdb_cursor_get`)
+
+        Parameters:
+
+        * Callback that accepts the key and value
+    */
+    static NAN_METHOD(get);
+
+    /*
         Asks the cursor to go to the first key-data pair in the database.
         (Wrapper for `mdb_cursor_get`)
     */
@@ -551,7 +609,21 @@ public:
     const uint16_t *data() const;
     size_t length() const;
 
-    static void writeTo(Handle<String> str, MDB_val *val);
+    static void writeTo(Handle<String> str, MDB_val *val, char type = TYPE_STRING);
 };
+
+struct NumberData {
+    char type;
+    double data;
+};
+
+struct BooleanData {
+    char type;
+    bool data;
+};
+
+void attachJson();
+Local<String> ValueToJson(Handle<Value> value);
+Local<Value> ValueFromJson(Handle<String> json);
 
 #endif // NODE_LMDB_H
