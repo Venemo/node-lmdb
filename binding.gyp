@@ -37,7 +37,10 @@
             "OTHER_LDFLAGS": ["-std=c++11"],
           }
         }],
-      ],
+        ["OS=='win'", {
+          "win_delay_load_hook": "false"
+        }]
+      ]
     }
   ]
 }
