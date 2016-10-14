@@ -100,7 +100,7 @@ NAN_METHOD(EnvWrap::open) {
     Local<String> path = options->Get(Nan::New<String>("path").ToLocalChecked())->ToString();
 
     // Parse the maxDbs option
-    rc = applyUint32Setting<unsigned>(&mdb_env_set_maxdbs, ew->env, options, 1, "maxDbs");
+    rc = applyUint32Setting<unsigned>(&mdb_env_set_maxdbs, ew->env, options, 10, "maxDbs");
     if (rc != 0) {
         return Nan::ThrowError(mdb_strerror(rc));
     }
