@@ -7,6 +7,8 @@ var numCPUs = require('os').cpus().length;
 
 var lmdb = require('..');
 
+var DB_SIZE = 5 * 1024 * 1024;
+
 if (cluster.isMaster) {
 
   // The master process
@@ -15,7 +17,7 @@ if (cluster.isMaster) {
   env.open({
     path: path.resolve(__dirname, './testdata'),
     maxDbs: 10,
-    mapSize: 268435456 * 4096,
+    mapSize: DB_SIZE,
     maxReaders: 126
   });
 
@@ -70,7 +72,7 @@ if (cluster.isMaster) {
   env.open({
     path: path.resolve(__dirname, './testdata'),
     maxDbs: 10,
-    mapSize: 268435456 * 4096,
+    mapSize: DB_SIZE,
     maxReaders: 126,
     readOnly: true
   });

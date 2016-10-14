@@ -131,7 +131,7 @@ NAN_METHOD(EnvWrap::open) {
     setFlagFromValue(&flags, MDB_NOMETASYNC, "noMetaSync", false, options);
     setFlagFromValue(&flags, MDB_NOSYNC, "noSync", false, options);
     setFlagFromValue(&flags, MDB_MAPASYNC, "mapAsync", false, options);
-    
+
     // Set MDB_NOTLS to enable multiple read-only transactions on the same thread (in this case, the nodejs main thread)
     flags |= MDB_NOTLS;
 
@@ -167,7 +167,7 @@ NAN_METHOD(EnvWrap::beginTxn) {
     const int argc = 2;
 
     Local<Value> argv[argc] = { info.This(), info[0] };
-    Local<Object> instance = Nan::New(txnCtor)->NewInstance(Nan::GetCurrentContext(), argc, argv).ToLocalChecked();
+    Local<Object> instance = Nan::NewInstance(Nan::New(txnCtor), argc, argv).ToLocalChecked();
 
     info.GetReturnValue().Set(instance);
 }
@@ -177,7 +177,7 @@ NAN_METHOD(EnvWrap::openDbi) {
 
     const unsigned argc = 2;
     Local<Value> argv[argc] = { info.This(), info[0] };
-    Local<Object> instance = Nan::New(dbiCtor)->NewInstance(Nan::GetCurrentContext(), argc, argv).ToLocalChecked();
+    Local<Object> instance = Nan::NewInstance(Nan::New(dbiCtor), argc, argv).ToLocalChecked();
 
     info.GetReturnValue().Set(instance);
 }

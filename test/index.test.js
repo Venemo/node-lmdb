@@ -9,6 +9,8 @@ var spawn = require('child_process').spawn;
 
 var lmdb = require('..');
 
+var MAX_DB_SIZE = 5 * 1024 * 1024;
+
 describe('Node.js LMDB Bindings', function() {
   var testDirPath = path.resolve(__dirname, './testdata');
   before(function(done) {
@@ -236,7 +238,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 10,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize: MAX_DB_SIZE
       });
       dbi = env.openDbi({
         name: 'mydb5',
@@ -348,7 +350,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 10,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize: MAX_DB_SIZE
       });
       dbi = env.openDbi({
         name: 'cursorstrings',
@@ -473,7 +475,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 10,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize: MAX_DB_SIZE
       });
       dbi = env.openDbi({
         name: 'mydb6',
@@ -522,7 +524,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 10,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize: MAX_DB_SIZE
       });
       dbi = env.openDbi({
         name: 'mydb7',
@@ -572,7 +574,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 12,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize: MAX_DB_SIZE
       });
       var dbi = env.openDbi({
         name: 'testfree',
@@ -609,7 +611,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 12,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize: MAX_DB_SIZE
       });
       dbi = env.openDbi({
         name: 'testkeys',

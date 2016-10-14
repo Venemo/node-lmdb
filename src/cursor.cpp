@@ -137,9 +137,7 @@ Nan::NAN_METHOD_RETURN_TYPE CursorWrap::getCommon(
             // In this case, we expect the key/data pair to be correctly filled
             const unsigned argc = 2;
             Local<Value> argv[argc] = { keyHandle, dataHandle };
-            Nan::Callback *callback = new Nan::Callback(Local<Function>::Cast(info[info.Length() - 1]));
-            callback->Call(argc, argv);
-            delete callback;
+            info[info.Length() - 1].As<Function>()->Call(Nan::Undefined(), argc, argv);
         }
     }
 
