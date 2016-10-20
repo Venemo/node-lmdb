@@ -54,6 +54,7 @@ Local<Value> valToBinary(MDB_val &data);
 Local<Value> valToBinaryUnsafe(MDB_val &data);
 Local<Value> valToNumber(MDB_val &data);
 Local<Value> valToBoolean(MDB_val &data);
+bool throwLMDBError(int code);
 
 /*
     `Env`
@@ -152,6 +153,14 @@ public:
         * Callback to be executed after the sync is complete.
     */
     static NAN_METHOD(sync);
+
+    static NAN_METHOD(getOSPageSize);
+    static NAN_METHOD(getStat);
+    static NAN_METHOD(getInfo);
+    static NAN_METHOD(getUsedSize);
+    static NAN_METHOD(setMapSize);
+    static NAN_METHOD(getMaxReaders);
+    static NAN_METHOD(setMaxReaders);
 };
 
 /*

@@ -40,8 +40,6 @@ TxnWrap::~TxnWrap() {
 }
 
 NAN_METHOD(TxnWrap::ctor) {
-    Nan::HandleScope scope;
-
     EnvWrap *ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info[0]->ToObject());
     int flags = 0;
 
@@ -56,8 +54,8 @@ NAN_METHOD(TxnWrap::ctor) {
 
     MDB_txn *txn;
     int rc = mdb_txn_begin(ew->env, nullptr, flags, &txn);
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     TxnWrap* tw = new TxnWrap(ew->env, txn);
@@ -69,8 +67,6 @@ NAN_METHOD(TxnWrap::ctor) {
 }
 
 NAN_METHOD(TxnWrap::commit) {
-    Nan::HandleScope scope;
-
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
 
     if (!tw->txn) {
@@ -81,16 +77,14 @@ NAN_METHOD(TxnWrap::commit) {
     tw->txn = nullptr;
     tw->ew->Unref();
 
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     return;
 }
 
 NAN_METHOD(TxnWrap::abort) {
-    Nan::HandleScope scope;
-
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
 
     if (!tw->txn) {
@@ -105,8 +99,6 @@ NAN_METHOD(TxnWrap::abort) {
 }
 
 NAN_METHOD(TxnWrap::reset) {
-    Nan::HandleScope scope;
-
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
 
     if (!tw->txn) {
@@ -119,8 +111,6 @@ NAN_METHOD(TxnWrap::reset) {
 }
 
 NAN_METHOD(TxnWrap::renew) {
-    Nan::HandleScope scope;
-
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
 
     if (!tw->txn) {
@@ -128,16 +118,14 @@ NAN_METHOD(TxnWrap::renew) {
     }
 
     int rc = mdb_txn_renew(tw->txn);
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     return;
 }
 
 Nan::NAN_METHOD_RETURN_TYPE TxnWrap::getCommon(Nan::NAN_METHOD_ARGS_TYPE info, Local<Value> (*successFunc)(MDB_val&)) {
-    Nan::HandleScope scope;
-
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
     DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject());
 
@@ -157,8 +145,8 @@ Nan::NAN_METHOD_RETURN_TYPE TxnWrap::getCommon(Nan::NAN_METHOD_ARGS_TYPE info, L
     if (rc == MDB_NOTFOUND) {
         return info.GetReturnValue().Set(Nan::Null());
     }
-    else if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    else if (throwLMDBError(rc)) {
+        return;
     }
     else {
       return info.GetReturnValue().Set(successFunc(data));
@@ -190,8 +178,6 @@ NAN_METHOD(TxnWrap::getBoolean) {
 }
 
 Nan::NAN_METHOD_RETURN_TYPE TxnWrap::putCommon(Nan::NAN_METHOD_ARGS_TYPE info, void (*fillFunc)(Nan::NAN_METHOD_ARGS_TYPE info, MDB_val&), void (*freeData)(MDB_val&)) {
-    Nan::HandleScope scope;
-
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
     DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject());
 
@@ -213,8 +199,8 @@ Nan::NAN_METHOD_RETURN_TYPE TxnWrap::putCommon(Nan::NAN_METHOD_ARGS_TYPE info, v
     freeKey(key);
     freeData(data);
 
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     return;
@@ -258,8 +244,6 @@ NAN_METHOD(TxnWrap::putBoolean) {
 }
 
 NAN_METHOD(TxnWrap::del) {
-    Nan::HandleScope scope;
-
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
     DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject());
 
@@ -276,8 +260,8 @@ NAN_METHOD(TxnWrap::del) {
     int rc = mdb_del(tw->txn, dw->dbi, &key, nullptr);
     freeKey(key);
 
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     return;

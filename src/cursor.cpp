@@ -40,8 +40,6 @@ CursorWrap::~CursorWrap() {
 }
 
 NAN_METHOD(CursorWrap::ctor) {
-    Nan::HandleScope scope;
-
     // Get arguments
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info[0]->ToObject());
     DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[1]->ToObject());
@@ -49,8 +47,8 @@ NAN_METHOD(CursorWrap::ctor) {
     // Open the cursor
     MDB_cursor *cursor;
     int rc = mdb_cursor_open(tw->txn, dw->dbi, &cursor);
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     // Create wrapper
@@ -66,8 +64,6 @@ NAN_METHOD(CursorWrap::ctor) {
 }
 
 NAN_METHOD(CursorWrap::close) {
-    Nan::HandleScope scope;
-
     CursorWrap *cw = Nan::ObjectWrap::Unwrap<CursorWrap>(info.This());
     mdb_cursor_close(cw->cursor);
     cw->dw->Unref();
@@ -77,14 +73,12 @@ NAN_METHOD(CursorWrap::close) {
 }
 
 NAN_METHOD(CursorWrap::del) {
-    Nan::HandleScope scope;
-
     CursorWrap *cw = Nan::ObjectWrap::Unwrap<CursorWrap>(info.This());
     // TODO: wrap MDB_NODUPDATA flag
 
     int rc = mdb_cursor_del(cw->cursor, 0);
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     return;
@@ -99,8 +93,6 @@ Nan::NAN_METHOD_RETURN_TYPE CursorWrap::getCommon(
     Local<Value> (*convertFunc)(MDB_val &data),
     bool keyAsBuffer
 ) {
-    Nan::HandleScope scope;
-
     int al = info.Length();
     CursorWrap *cw = Nan::ObjectWrap::Unwrap<CursorWrap>(info.This());
 
@@ -121,8 +113,8 @@ Nan::NAN_METHOD_RETURN_TYPE CursorWrap::getCommon(
     if (rc == MDB_NOTFOUND) {
         return info.GetReturnValue().Set(Nan::Null());
     }
-    else if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    else if (throwLMDBError(rc)) {
+        return;
     }
 
     Local<Value> keyHandle = Nan::Undefined();

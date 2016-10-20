@@ -53,8 +53,6 @@ DbiWrap::~DbiWrap() {
 }
 
 NAN_METHOD(DbiWrap::ctor) {
-    Nan::HandleScope scope;
-
     MDB_dbi dbi;
     MDB_txn *txn;
     int rc;
@@ -104,7 +102,9 @@ NAN_METHOD(DbiWrap::ctor) {
     rc = mdb_txn_begin(ew->env, nullptr, txnFlags, &txn);
     if (rc != 0) {
         mdb_txn_abort(txn);
-        return Nan::ThrowError(mdb_strerror(rc));
+        if (throwLMDBError(rc)) {
+            return;
+        }
     }
 
     // Open database
@@ -112,13 +112,17 @@ NAN_METHOD(DbiWrap::ctor) {
     rc = mdb_dbi_open(txn, nameIsNull ? nullptr : *String::Utf8Value(name), flags, &dbi);
     if (rc != 0) {
         mdb_txn_abort(txn);
-        return Nan::ThrowError(mdb_strerror(rc));
+        if (throwLMDBError(rc)) {
+            return;
+        }
     }
 
     // Commit transaction
     rc = mdb_txn_commit(txn);
     if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+        if (throwLMDBError(rc)) {
+            return;
+        }
     }
 
     // Create wrapper
@@ -132,8 +136,6 @@ NAN_METHOD(DbiWrap::ctor) {
 }
 
 NAN_METHOD(DbiWrap::close) {
-    Nan::HandleScope scope;
-
     DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info.This());
     mdb_dbi_close(dw->env, dw->dbi);
     dw->ew->Unref();
@@ -143,8 +145,6 @@ NAN_METHOD(DbiWrap::close) {
 }
 
 NAN_METHOD(DbiWrap::drop) {
-    Nan::HandleScope scope;
-
     DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info.This());
     int del = 1;
     int rc;
@@ -159,20 +159,20 @@ NAN_METHOD(DbiWrap::drop) {
 
     // Begin transaction
     rc = mdb_txn_begin(dw->env, nullptr, 0, &txn);
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     // Drop database
     rc = mdb_drop(txn, dw->dbi, del);
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     // Commit transaction
     rc = mdb_txn_commit(txn);
-    if (rc != 0) {
-        return Nan::ThrowError(mdb_strerror(rc));
+    if (throwLMDBError(rc)) {
+        return;
     }
 
     dw->ew->Unref();
@@ -182,8 +182,6 @@ NAN_METHOD(DbiWrap::drop) {
 }
 
 NAN_METHOD(DbiWrap::stat) {
-    Nan::HandleScope scope;
-
     DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info.This());
 
     if (info.Length() != 1) {

@@ -164,6 +164,16 @@ void consoleLogN(int n) {
     consoleLog(c);
 }
 
+bool throwLMDBError(int code) {
+    if (code != 0) {
+        auto err = Nan::Error(mdb_strerror(code));
+        err.As<Object>()->Set(Nan::New("code").ToLocalChecked(), Nan::New(code));
+        Nan::ThrowError(err);
+        return true;
+    }
+    return false;
+}
+
 void CustomExternalStringResource::writeTo(Handle<String> str, MDB_val *val) {
     unsigned int l = str->Length() + 1;
     uint16_t *d = new uint16_t[l];
@@ -185,7 +195,7 @@ CustomExternalStringResource::~CustomExternalStringResource() { }
 
 void CustomExternalStringResource::Dispose() {
     // No need to do anything, the data is owned by LMDB, not us
-    
+
     // But actually need to delete the string resource itself:
     // the docs say that "The default implementation will use the delete operator."
     // while initially I thought this means using delete on the string,

@@ -28,17 +28,91 @@ describe('Node.js LMDB Bindings', function() {
       });
     });
   });
-  it('will construct, open and close an environment', function() {
-    var env = new lmdb.Env();
-    env.open({
-      path: testDirPath,
-      maxDbs: 10
+  describe('Env', function () {
+    it('will report OS\' page size', function() {
+      lmdb.Env.getOSPageSize.should.be.a('function');
+      var pageSize = lmdb.Env.getOSPageSize();
+      chai.assert.isAbove(pageSize, 0);
     });
-    env.close.should.be.a('function');
-    env.beginTxn.should.be.a('function');
-    env.openDbi.should.be.a('function');
-    env.sync.should.be.a('function');
-    env.close();
+    it('will construct, open and close an environment', function() {
+      var env = new lmdb.Env();
+      env.open({
+        path: testDirPath,
+        maxDbs: 10
+      });
+      env.close.should.be.a('function');
+      env.beginTxn.should.be.a('function');
+      env.openDbi.should.be.a('function');
+      env.sync.should.be.a('function');
+      env.getStat.should.be.a('function');
+      env.getInfo.should.be.a('function');
+      env.getUsedSize.should.be.a('function');
+      env.setMapSize.should.be.a('function');
+      env.setMaxReaders.should.be.a('function');
+      env.getMaxReaders.should.be.a('function');
+      env.close();
+    });
+    it('should report statistics', function (done) {
+      var env = new lmdb.Env();
+      env.open({
+        path: testDirPath,
+        maxDbs: 10
+      });
+      var stat = env.getStat();
+      stat.should.be.an('object');
+      chai.assert.equal(stat.pSize, lmdb.Env.getOSPageSize());
+      chai.assert.equal(stat.depth, 0);
+      chai.assert.equal(stat.branchPages, 0);
+      chai.assert.equal(stat.leafPages, 0);
+      chai.assert.equal(stat.overflowPages, 0);
+      chai.assert.equal(stat.entries, 0);
+      var info = env.getInfo();
+      info.should.be.an('object');
+      chai.assert.equal(info.mapSize, 1048576);
+      chai.assert.equal(info.lastPgNo, 1);
+      chai.assert.equal(info.lastTxnId, 0);
+      chai.assert.equal(info.maxReaders, 126);
+      chai.assert.equal(info.numReaders, 0);
+
+      var dbi = env.openDbi({
+        name: 'statTest',
+        create: true
+      });
+      stat = env.getStat();
+      stat.should.be.an('object');
+      chai.assert.equal(stat.pSize, lmdb.Env.getOSPageSize());
+      chai.assert.isAbove(stat.depth, 0);
+      chai.assert.equal(stat.branchPages, 0);
+      chai.assert.isAbove(stat.leafPages, 0);
+      chai.assert.equal(stat.overflowPages, 0);
+      chai.assert.isAbove(stat.entries, 0);
+
+      for (var i = 0; i < 100; i++) {
+        var txn = env.beginTxn();
+        txn.putBinary(dbi, 'hello1', new Buffer(stat.pSize));
+        txn.putBinary(dbi, 'hello2', new Buffer(stat.pSize));
+        txn.putBinary(dbi, 'hello3', new Buffer(stat.pSize));
+        txn.commit();
+
+        txn = env.beginTxn();
+        txn.del(dbi, 'hello1');
+        txn.del(dbi, 'hello2');
+        txn.del(dbi, 'hello3');
+        txn.commit();
+      }
+
+      env.sync(function (err) {
+        if (err) {
+          return done(err);
+        }
+        chai.assert.isBelow(env.getUsedSize(), lmdb.Env.getOSPageSize() * 100);
+
+        dbi.drop();
+        env.close();
+
+        done();
+      });
+    });
   });
   describe('Basics', function() {
     var env;
