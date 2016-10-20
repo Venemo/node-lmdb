@@ -16,7 +16,7 @@
     "binding"
   ],
   "repository": "https://github.com/Venemo/node-lmdb",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "main": "./index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha test/**.test.js --recursive",
@@ -24,7 +24,7 @@
   },
   "gypfile": true,
   "dependencies": {
-    "bindings": "^1.2.1",
+    "bindings": "*",
     "nan": "^2.4"
   },
   "devDependencies": {
