@@ -1,3 +1,0 @@
-[submodule "dependencies/lmdb"]
-	path = dependencies/lmdb
-	url = https://github.com/LMDB/lmdb
