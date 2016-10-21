@@ -38,8 +38,7 @@
           }
         }],
         ["OS=='win'", {
-          "win_delay_load_hook": "false",
-          "libraries": [ "../dependencies/wdk/x64/ntdll.lib" ]
+          "win_delay_load_hook": "false"
         }]
       ]
     }

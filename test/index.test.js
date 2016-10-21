@@ -9,7 +9,7 @@ var spawn = require('child_process').spawn;
 
 var lmdb = require('..');
 
-var MAX_DB_SIZE = 10 * 1024 * 1024 * 1024;
+var MAX_DB_SIZE = 5 * 1024 * 1024;
 
 describe('Node.js LMDB Bindings', function() {
   var testDirPath = path.resolve(__dirname, './testdata');
