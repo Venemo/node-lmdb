@@ -172,17 +172,25 @@ NAN_METHOD(EnvWrap::beginTxn) {
     const int argc = 2;
 
     Local<Value> argv[argc] = { info.This(), info[0] };
-    Local<Object> instance = Nan::NewInstance(Nan::New(txnCtor), argc, argv).ToLocalChecked();
+    auto instance = Nan::NewInstance(Nan::New(txnCtor), argc, argv);
 
-    info.GetReturnValue().Set(instance);
+    if (instance.IsEmpty()) {
+        return;
+    }
+
+    info.GetReturnValue().Set(instance.ToLocalChecked());
 }
 
 NAN_METHOD(EnvWrap::openDbi) {
     const unsigned argc = 2;
     Local<Value> argv[argc] = { info.This(), info[0] };
-    Local<Object> instance = Nan::NewInstance(Nan::New(dbiCtor), argc, argv).ToLocalChecked();
+    auto instance = Nan::NewInstance(Nan::New(dbiCtor), argc, argv);
 
-    info.GetReturnValue().Set(instance);
+    if (instance.IsEmpty()) {
+        return;
+    }
+
+    info.GetReturnValue().Set(instance.ToLocalChecked());
 }
 
 NAN_METHOD(EnvWrap::sync) {
