@@ -5,7 +5,8 @@
   "contributors": [
     "Timur Kristóf <venemo@fedoraproject.org>",
     "Erich Ocean <erich@xygroup.co>",
-    "Braydon Fuller <courier@braydon.com>"
+    "Braydon Fuller <courier@braydon.com>",
+    "Gabor Mezo <gmezo@graphisoft.com>"
   ],
   "license": "MIT",
   "keywords": [
@@ -16,7 +17,7 @@
     "binding"
   ],
   "repository": "https://github.com/Venemo/node-lmdb",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "main": "./index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha test/**.test.js --recursive",
