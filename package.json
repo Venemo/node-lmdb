@@ -1,5 +1,5 @@
 {
-  "name": "node-lmdb",
+  "name": "gs-node-lmdb",
   "description": "Node binding for LMDB, the Lightning Memory-Mapped Database",
   "author": "Timur Kristóf <venemo@fedoraproject.org>",
   "contributors": [
@@ -23,7 +23,6 @@
     "test": "./node_modules/.bin/mocha test/**.test.js --recursive",
     "benchmark": "node ./benchmark/index.js"
   },
-  "gypfile": true,
   "dependencies": {
     "bindings": "*",
     "nan": "^2.4"

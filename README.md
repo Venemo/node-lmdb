@@ -1,3 +1,8 @@
+About gs-node-lmdb
+==================
+
+This is an experimental, friendly fork of the original node-lmdb package. All of its changes are gonna be contributed back to the original module once they stabilizes.
+
 node-lmdb
 =========
 
