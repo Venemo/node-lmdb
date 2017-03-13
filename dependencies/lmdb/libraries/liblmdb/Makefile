@@ -8,7 +8,7 @@
 # platforms; you should not need to change any of these.
 # Read their descriptions in mdb.c if you do:
 #
-# - MDB_USE_POSIX_SEM
+# - MDB_USE_POSIX_MUTEX, MDB_USE_POSIX_SEM, MDB_USE_SYSV_SEM
 # - MDB_DSYNC
 # - MDB_FDATASYNC
 # - MDB_FDATASYNC_WORKS
@@ -24,8 +24,8 @@ W	= -W -Wall -Wno-unused-parameter -Wbad-function-cast -Wuninitialized
 THREADS = -pthread
 OPT = -O2 -g
 CFLAGS	= $(THREADS) $(OPT) $(W) $(XCFLAGS)
-LDLIBS	=
-SOLIBS	=
+LDLIBS	= # -lntdll # Windows needs ntdll
+SOLIBS	= # -lntdll
 SOEXT	= .so
 prefix	= /usr/local
 exec_prefix = $(prefix)
