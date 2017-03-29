@@ -513,16 +513,14 @@ describe('Node.js LMDB Bindings', function() {
     });
     it('will move cursor over key/values', function(done) {
       var txn = env.beginTxn();
-      var cursor = new lmdb.Cursor(txn, dbi);
+      var cursor = new lmdb.Cursor(txn, dbi, true);
       let expectedKey = (padding + 40).slice(-padding.length);
       let key = Buffer.from(expectedKey,keyEnc);
       cursor.goToKey(key);
       cursor.getCurrentBinary(function(key, value) {
         let readKey = key.toString(keyEnc);
         let readValue = value.toString(valueEnc);
-        console.log(readKey);
-        console.log(readValue);
-        //readKey.should.equal(expectedKey);
+        readKey.should.equal(expectedKey);
         readValue.should.equal(expand(expectedKey));
       });
 
@@ -531,18 +529,16 @@ describe('Node.js LMDB Bindings', function() {
       // key is a string... bug...
       //(typeof key).should.not.equal('string');
       while (key && count < total+1) { //+1 to run off end if fails to return null
-        //console.log(key.length);
         let expectedKey = (padding + count).slice(-padding.length);
         cursor.getCurrentBinary(function(key, value) {
+          (typeof key).should.not.equal('string');
           let readKey = key.toString(keyEnc);
           let readValue = value.toString(valueEnc);
-          console.log(readKey);
-          console.log(readValue);
-          //readKey.should.equal(expectedKey);
+          readKey.should.equal(expectedKey);
           readValue.should.equal(expand(expectedKey));
           });
         key = cursor.goToNext();
-        //(typeof key).should.not.equal('string');
+        (typeof key).should.not.equal('string');
         count++; 
       }
       cursor.close();
@@ -555,7 +551,7 @@ describe('Node.js LMDB Bindings', function() {
     this.timeout(10000);
     var env;
     var dbi;
-    var total = 100000;
+    var total = 1000;
     let padding = '000000000';
     let keyEnc = 'utf8';
     let valueEnc = 'utf8';
@@ -580,36 +576,32 @@ describe('Node.js LMDB Bindings', function() {
 
     it('will move cursor over existing key/values', function(done) {
       var txn = env.beginTxn();
-      var cursor = new lmdb.Cursor(txn, dbi);
+      var cursor = new lmdb.Cursor(txn, dbi, true);
       let expectedKey = (padding + 40).slice(-padding.length);
       let key = Buffer.from(expectedKey,keyEnc);
       cursor.goToKey(key);
-      cursor.getCurrentBinary(function(key, value) {
+      let rvalue = cursor.getCurrentBinary(function(key, value) {
+        (typeof key).should.not.equal('string');
         let readKey = key.toString(keyEnc);
         let readValue = value.toString(valueEnc);
-        //console.log(readKey);
-        //console.log(readValue);
         readKey.should.equal(expectedKey);
         readValue.should.equal(expand(expectedKey));
       });
+      rvalue.toString(valueEnc).should.equal(expand(expectedKey));
 
       let count = 0;
       key = cursor.goToFirst();
-      // key is a string... bug...
-      //(typeof key).should.not.equal('string');
+      (typeof key).should.not.equal('string');
       while (key && count < total+1) { //+1 to run off end if fails to return null
-        //console.log(key.length);
         let expectedKey = (padding + count).slice(-padding.length);
         cursor.getCurrentBinary(function(key, value) {
           let readKey = key.toString(keyEnc);
           let readValue = value.toString(valueEnc);
-          //console.log(readKey);
-          //console.log(readValue);
-//          readKey.should.equal(expectedKey);
+          readKey.should.equal(expectedKey);
           readValue.should.equal(expand(expectedKey));
           });
         key = cursor.goToNext();
-        //(typeof key).should.not.equal('string');
+        (typeof key).should.not.equal('string');
         count++; 
       }
       cursor.close();
@@ -665,7 +657,7 @@ describe('Node.js LMDB Bindings', function() {
       txn.commit();
 
       var txn2 = env.beginTxn({readonly: true});
-      var cursor = new lmdb.Cursor(txn2, dbi);
+      var cursor = new lmdb.Cursor(txn2, dbi, true);
       var found = cursor.goToKey(new Buffer('id'));
       should.exist(found);
       cursor.getCurrentBinary(function(key, value) {
@@ -716,7 +708,7 @@ describe('Node.js LMDB Bindings', function() {
       txn.commit();
 
       var txn2 = env.beginTxn({readonly: true});
-      var cursor = new lmdb.Cursor(txn2, dbi);
+      var cursor = new lmdb.Cursor(txn2, dbi, true);
       var found = cursor.goToKey(new Buffer('id'));
       should.exist(found);
       cursor.getCurrentBinary(function(key, value) {
@@ -752,7 +744,7 @@ describe('Node.js LMDB Bindings', function() {
       txn.putBinary(dbi, expectedKey, expectedValue);
       txn.commit();
       var txn2 = env.beginTxn();
-      var cursor = new lmdb.Cursor(txn2, dbi);
+      var cursor = new lmdb.Cursor(txn2, dbi, true);
       var key;
       var value;
       cursor.goToFirst();
@@ -795,10 +787,10 @@ describe('Node.js LMDB Bindings', function() {
     });
     it('will be able to convert key to buffer', function(done) {
       var txn = env.beginTxn();
-      var cursor = new lmdb.Cursor(txn, dbi);
+      var cursor = new lmdb.Cursor(txn, dbi, true);
       cursor.goToFirst();
       cursor.getCurrentBinary(function(key, value) {
-        var keyBuffer = new Buffer(key, 'hex');
+        var keyBuffer = new Buffer(key);
         cursor.close();
         txn.abort();
         keyBuffer.compare(expectedKey).should.equal(0);
