@@ -419,6 +419,9 @@ private:
     node_lmdb::KeyType kt;
     // Key/data pair where the cursor is at
     MDB_val key, data;
+    // Deleter function for the current key.
+    argtokey_callback_t freeKey;
+    
     DbiWrap *dw;
     TxnWrap *tw;
 
@@ -454,7 +457,7 @@ public:
     // Helper method for getters (not exposed)
     static Nan::NAN_METHOD_RETURN_TYPE getCommon(
         Nan::NAN_METHOD_ARGS_TYPE info, MDB_cursor_op op,
-        void (*setKey)(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB_val&),
+        argtokey_callback_t (*setKey)(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB_val&),
         void (*setData)(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB_val&),
         void (*freeData)(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB_val&),
         Local<Value> (*convertFunc)(MDB_val &data));

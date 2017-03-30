@@ -81,6 +81,64 @@ describe('Node.js LMDB Bindings', function() {
       txn.commit();
       dbi.close();
     });
+    it('will open a database, begin a transaction and get/put/delete string data containing zeros', function() {
+      var dbi = env.openDbi({
+        name: 'mydb1x',
+        create: true
+      });
+      var txn = env.beginTxn();
+      var data = txn.getString(dbi, 'hello');
+      should.equal(data, null);
+      txn.putString(dbi, 'hello', 'Hello \0 world!');
+      var data2 = txn.getString(dbi, 'hello');
+      data2.should.equal('Hello \0 world!');
+      txn.del(dbi, 'hello');
+      var data3 = txn.getString(dbi, 'hello');
+      should.equal(data3, null);
+      txn.commit();
+      dbi.close();
+    });
+    it('will check if UTF-16 Buffers can be read as strings', function() {
+      // The string we want to store using a buffer
+      var expectedString = 'Hello \0 world!';
+      
+      // node-lmdb internally stores a terminating zero, so we need to manually emulate that here
+      // NOTE: this would NEVER work without 'utf16le'!
+      var buf = Buffer.from(expectedString + '\0', 'utf16le');
+      var key = 'hello';
+      
+      // Open dbi and create cursor
+      var dbi = env.openDbi({
+        name: 'mydb1xx',
+        create: true
+      });
+      var txn = env.beginTxn();
+      
+      // Check non-existence of the key
+      var data1 = txn.getBinary(dbi, key);
+      should.equal(data1, null);
+      
+      // Store data as binary
+      txn.putBinary(dbi, key, buf);
+      
+      // Retrieve data as binary and check
+      var data2 = txn.getBinary(dbi, key);
+      should.equal(buf.compare(data2), 0);
+      
+      // Retrieve same data as string and check
+      var data3 = txn.getString(dbi, key);
+      should.equal(data3, expectedString);
+      
+      // Delete data
+      txn.del(dbi, key);
+      
+      // Verify non-existence of data
+      var data3 = txn.getBinary(dbi, key);
+      should.equal(data3, null);
+      
+      txn.commit();
+      dbi.close();
+    });
     it('will throw Javascript error if named database cannot be found', function () {
       try {
         env.openDbi({
@@ -635,7 +693,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 10,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize:  64 * 1024 * 1024
       });
       dbi = env.openDbi({
         name: 'mydb6',
@@ -684,7 +742,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 10,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize:  64 * 1024 * 1024
       });
       dbi = env.openDbi({
         name: 'mydb7',
@@ -734,7 +792,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 12,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize: 64 * 1024 * 1024
       });
       var dbi = env.openDbi({
         name: 'testfree',
@@ -771,7 +829,7 @@ describe('Node.js LMDB Bindings', function() {
       env.open({
         path: testDirPath,
         maxDbs: 12,
-        mapSize: 16 * 1024 * 1024 * 1024
+        mapSize: 64 * 1024 * 1024
       });
       dbi = env.openDbi({
         name: 'testkeys',

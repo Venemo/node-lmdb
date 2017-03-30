@@ -148,7 +148,62 @@ Advanced examples:
 * `examples/advanced1-indexing.js` - this is a module pattern example which demonstrates the implementation of a search engine prototype
 * *More will come later, so don't forget to check back!*
 
-### Limitations of node-lmdb
+### Caveats
+
+#### Working with strings
+
+Strings can come from many different places and can have many different encodings. In the JavaScript world (and therefore the node.js world) strings are encoded in UTF-16, so every string stored with node-lmdb is also encoded in UTF-16 internally. This means that the string API (`getString`, `putString`, etc.) will only work with UTF-16 encoded strings.
+
+If you only use strings that come from JavaScript code or other code that is a “good node citizen”, you never have to worry about encoding.
+
+##### How to use other encodings
+
+This has come up many times in discussions, so here is a way to use other encodings supported by node.js. You can use `Buffer`s with node-lmdb, which are a very friendly way to work with binary data. They also come in handy when you store strings in your database with encodings other than UTF-16.
+
+You can, for example, read a UTF-8 string as a buffer, and then use `Buffer`'s `toString` method and specify the encoding:
+
+```javascript
+// Get stored data as Buffer
+var buf = txn.getBinary(dbi, key);
+// Use the Buffer toString API to convert from UTF-8 to a JavaScript string
+var str = buf.toString('utf8');
+```
+
+Useful links:
+
+* Buffer API in node.js:  
+https://nodejs.org/api/buffer.html
+* The list of encodings supported by node.js:  
+https://github.com/nodejs/node/blob/master/lib/buffer.js#L490
+
+##### Storing UTF-16 strings as Buffers
+
+While node.js doesn't require the UTF-16 strings to be zero-terminated, node-lmdb automatically and transparently zero-terminates every string internally.
+As a user, this shouldn't concern you, but if you want to write a string using the Buffer API and read it as a string, you are in for a nasty surprise.
+
+However, it will work correctly if you manually add the terminating zero to your buffer.
+
+Conceptually, something like this will work:
+
+```javascript
+// The string we want to store using a buffer
+var expectedString = 'Hello world!';
+
+// node-lmdb internally stores a terminating zero, so we need to manually emulate that here
+// NOTE: this would NEVER work without 'utf16le'!
+var buf = Buffer.from(expectedString + '\0', 'utf16le');
+
+// Store data as binary
+txn.putBinary(dbi, key, buf);
+      
+// Retrieve same data as string and check
+var data3 = txn.getString(dbi, key);
+
+// At this point, data3 is equal to expectedString
+
+```
+
+#### Limitations of node-lmdb
 
 * **Only string, binary, number and boolean values are supported.** If you want to store complex data structures, use `JSON.stringify` before putting it into the database and `JSON.parse` when you retrieve the data.
 * **Only string and unsigned integer keys are supported.** Default is string, specify `keyIsUint32: true` to `openDbi` for unsigned integer. It would make the API too complicated to support more data types for keys.

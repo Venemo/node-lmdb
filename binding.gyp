@@ -2,6 +2,7 @@
   "targets": [
     {
       "target_name": "node-lmdb",
+	  'win_delay_load_hook': 'false',
       "sources": [
         "dependencies/lmdb/libraries/liblmdb/mdb.c",
         "dependencies/lmdb/libraries/liblmdb/midl.c",
@@ -39,6 +40,9 @@
             "CLANG_CXX_LIBRARY": "libc++"
           }
         }],
+		["OS=='win'", {
+			"libraries": ["ntdll.lib"]
+		}],
       ],
     }
   ]
