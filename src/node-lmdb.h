@@ -61,6 +61,8 @@ void setupExportMisc(Handle<Object> exports);
 // Helper callback
 typedef void (*argtokey_callback_t)(MDB_val &key);
 
+int utf16_cmp_func(const MDB_val *a, const MDB_val *b);
+
 void consoleLog(Local<Value> val);
 void consoleLog(const char *msg);
 void consoleLogN(int n);
