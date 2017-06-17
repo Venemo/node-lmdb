@@ -305,3 +305,16 @@ const uint16_t *CustomExternalStringResource::data() const {
 size_t CustomExternalStringResource::length() const {
     return this->l;
 }
+
+int utf16_cmp_func(const MDB_val *a, const MDB_val *b) {
+    size_t len = (b->mv_size > a->mv_size ? a->mv_size >> 1 : b->mv_size >> 1) - 1;
+    uint16_t charA, charB;
+    for (size_t i = 0; i < len; i++) {
+        charA = *((uint16_t*)a->mv_data + i);
+        charB = *((uint16_t*)b->mv_data + i);
+        if (charA != charB) {
+            return (charA - charB);
+        }
+    }
+    return a->mv_size == b->mv_size ? 0 : a->mv_size - b->mv_size;
+}
