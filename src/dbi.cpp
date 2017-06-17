@@ -138,6 +138,9 @@ NAN_METHOD(DbiWrap::ctor) {
     }
     else {
         isOpen = true;
+        if (keyType == NodeLmdbKeyType::StringKey) {
+            rc = mdb_set_compare(txn, dbi, utf16_cmp_func);
+        }
     }
 
     if (needsTransaction) {
