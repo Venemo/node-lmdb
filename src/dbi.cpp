@@ -87,6 +87,7 @@ NAN_METHOD(DbiWrap::ctor) {
         setFlagFromValue(&flags, MDB_INTEGERDUP, "integerDup", false, options);
         setFlagFromValue(&flags, MDB_REVERSEDUP, "reverseDup", false, options);
         setFlagFromValue(&flags, MDB_CREATE, "create", false, options);
+        setFlagFromValue(&flags, MDB_INTEGERKEY, "bufferKeyIsInteger", false, options);
 
         // TODO: wrap mdb_set_compare
         // TODO: wrap mdb_set_dupsort
