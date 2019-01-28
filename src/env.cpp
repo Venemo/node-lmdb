@@ -92,11 +92,11 @@ int applyUint32Setting(int (*f)(MDB_env *, T), MDB_env* e, Local<Object> options
 
 class SyncWorker : public Nan::AsyncWorker {
   public:
-    SyncWorker(MDB_env* env, Nan::Callback *callback)
-      : Nan::AsyncWorker(callback), env(env) {}
+    SyncWorker(MDB_env* env, bool force, Nan::Callback *callback)
+      : Nan::AsyncWorker(callback), force(force), env(env) {}
 
     void Execute() {
-      int rc = mdb_env_msync(env);
+      int rc = mdb_env_sync(env, force);
       if (rc != 0) {
         SetErrorMessage(mdb_strerror(rc));
       }
@@ -345,13 +345,15 @@ NAN_METHOD(EnvWrap::sync) {
     if (!ew->env) {
         return Nan::ThrowError("The environment is already closed.");
     }
+    // if there is a second argument, use it as the force
+    bool force = !info[1]->IsFalse();
 
     Nan::Callback* callback = new Nan::Callback(
       v8::Local<v8::Function>::Cast(info[0])
     );
 
     SyncWorker* worker = new SyncWorker(
-      ew->env, callback
+      ew->env, force, callback
     );
 
     Nan::AsyncQueueWorker(worker);
