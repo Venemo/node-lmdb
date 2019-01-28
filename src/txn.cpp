@@ -69,6 +69,8 @@ NAN_METHOD(TxnWrap::ctor) {
         // Get flags from options
 
         setFlagFromValue(&flags, MDB_RDONLY, "readOnly", false, options);
+        setFlagFromValue(&flags, MDB_NOMETASYNC, "noMetaSync", false, options);
+        setFlagFromValue(&flags, MDB_NOSYNC, "noSync", false, options);
     }
     
     // Check existence of current write transaction
