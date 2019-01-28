@@ -788,6 +788,9 @@ int  mdb_env_sync(MDB_env *env, int force);
 	 * The environment handle will be freed and must not be used again after this call.
 	 * @param[in] env An environment handle returned by #mdb_env_create()
 	 */
+
+int  mdb_env_msync(MDB_env *env);
+
 void mdb_env_close(MDB_env *env);
 
 	/** @brief Set environment flags.

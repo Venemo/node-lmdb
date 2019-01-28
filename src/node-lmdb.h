@@ -158,6 +158,8 @@ public:
         * maximal size of the memory map (the full environment) in bytes (default is 10485760 bytes)
     */
     static NAN_METHOD(resize);
+    
+    static NAN_METHOD(setNoSync);
 
     /*
         Closes the database environment.

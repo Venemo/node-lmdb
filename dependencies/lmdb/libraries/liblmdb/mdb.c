@@ -2828,6 +2828,21 @@ mdb_env_sync(MDB_env *env, int force)
 	return mdb_env_sync0(env, force, m->mm_last_pg+1);
 }
 
+int
+mdb_env_msync(MDB_env *env)
+{
+	MDB_meta *m = mdb_env_pick_meta(env);
+	pgno_t numpgs = m->mm_last_pg+1;
+	int rc = 0;
+	if (env->me_flags & MDB_RDONLY)
+		return EACCES;
+	if (env->me_flags & MDB_WRITEMAP) {
+		if (MDB_MSYNC(env->me_map, env->me_psize * numpgs, MS_ASYNC))
+			rc = ErrCode();
+	}
+	return rc;
+}
+
 /** Back up parent txn's cursors, then grab the originals for tracking */
 static int
 mdb_cursor_shadow(MDB_txn *src, MDB_txn *dst)

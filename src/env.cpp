@@ -96,7 +96,7 @@ class SyncWorker : public Nan::AsyncWorker {
       : Nan::AsyncWorker(callback), env(env) {}
 
     void Execute() {
-      int rc = mdb_env_sync(env, 1);
+      int rc = mdb_env_msync(env);
       if (rc != 0) {
         SetErrorMessage(mdb_strerror(rc));
       }
@@ -222,6 +222,27 @@ NAN_METHOD(EnvWrap::close) {
     ew->cleanupStrayTxns();
     mdb_env_close(ew->env);
     ew->env = nullptr;
+}
+
+NAN_METHOD(EnvWrap::setNoSync) {
+    Nan::HandleScope scope;
+    EnvWrap *ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info.This());
+    if (info.Length() != 1 || !info[0]->IsBoolean()) {
+        return Nan::ThrowError("Call env.setFlags() with exactly one argument which is boolean.");
+    }
+
+    int flags = MDB_NOSYNC;
+    int onoff = info[0]->BooleanValue();
+
+    if (!ew->env) {
+        return Nan::ThrowError("The environment is already closed.");
+    }
+
+
+    int rc = mdb_env_set_flags(ew->env, flags, onoff);
+    if (rc != 0) {
+        return throwLmdbError(rc);
+    }
 }
 
 NAN_METHOD(EnvWrap::stat) {
