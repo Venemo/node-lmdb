@@ -113,6 +113,7 @@ class SyncWorker : public Nan::AsyncWorker {
 
   private:
     MDB_env* env;
+    bool force;
 };
 
 
