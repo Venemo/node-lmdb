@@ -56,6 +56,108 @@ DbiWrap::~DbiWrap() {
     }
 }
 
+
+class PutWorker : public Nan::AsyncWorker {
+  public:
+    PutWorker(MDB_env* env, MDB_dbi dbi, MDB_val key, MDB_val data, Nan::Callback *callback)
+      : Nan::AsyncWorker(callback), key(key), data(data), dbi(dbi), env(env) {}
+
+    void Execute() {
+        MDB_txn *txn;
+        int flags = 0;
+        int rc = mdb_txn_begin(env, nullptr, flags, &txn);
+        if (rc != 0) {
+            return SetErrorMessage(mdb_strerror(rc));
+        }
+
+        rc = mdb_put(txn, dbi, &key, &data, flags);
+        if (rc != 0) {
+            mdb_txn_abort(txn);
+            return SetErrorMessage(mdb_strerror(rc));
+        }
+        
+        // Check result code
+        if (rc != 0) {
+            return throwLmdbError(rc);
+        }
+        rc = mdb_txn_commit(txn);
+        if (rc != 0) {
+            return SetErrorMessage(mdb_strerror(rc));
+        }
+    }
+
+    void HandleOKCallback() {
+        Nan::HandleScope scope;
+        v8::Local<v8::Value> argv[] = {
+           Nan::Null()
+        };
+
+        callback->Call(1, argv, async_resource);
+    }
+
+  private:
+      MDB_env* env;
+      MDB_dbi dbi;
+      MDB_val key;
+      MDB_val data;
+};
+
+struct action_t {
+    MDB_val key;
+    MDB_val data;
+};
+
+class BatchWorker : public Nan::AsyncWorker {
+  public:
+    BatchWorker(MDB_env* env, MDB_dbi dbi, action_t *actions, int actionCount, Nan::Callback *callback)
+      : Nan::AsyncWorker(callback), actions(actions), actionCount(actionCount), dbi(dbi), env(env) {}
+
+    void Execute() {
+        MDB_txn *txn;
+        int flags = 0;
+        int rc = mdb_txn_begin(env, nullptr, flags, &txn);
+        if (rc != 0) {
+            return SetErrorMessage(mdb_strerror(rc));
+        }
+        for (int i = 0; i < actionCount; i++) {
+            if (actions[i].data.mv_data == nullptr) {
+                rc = mdb_del(txn, dbi, &actions[i].key, nullptr);
+            } else {
+                rc = mdb_put(txn, dbi, &actions[i].key, &actions[i].data, flags);
+            }
+            if (rc != 0) {
+                mdb_txn_abort(txn);
+                return SetErrorMessage(mdb_strerror(rc));
+            }
+        }
+        delete[] actions;
+
+        // Check result code
+        if (rc != 0) {
+            return throwLmdbError(rc);
+        }
+        rc = mdb_txn_commit(txn);
+        if (rc != 0) {
+            return SetErrorMessage(mdb_strerror(rc));
+        }
+    }
+
+    void HandleOKCallback() {
+        Nan::HandleScope scope;
+        v8::Local<v8::Value> argv[] = {
+           Nan::Null()
+        };
+
+        callback->Call(1, argv, async_resource);
+    }
+
+  private:
+      MDB_env* env;
+      MDB_dbi dbi;
+      int actionCount;
+      action_t* actions;
+};
+
 NAN_METHOD(DbiWrap::ctor) {
     Nan::HandleScope scope;
 
@@ -262,4 +364,85 @@ NAN_METHOD(DbiWrap::stat) {
     obj->Set(Nan::New<String>("entryCount").ToLocalChecked(), Nan::New<Number>(stat.ms_entries));
 
     info.GetReturnValue().Set(obj);
+}
+
+
+NAN_METHOD(DbiWrap::putAsync) {
+    Nan::HandleScope scope;
+
+    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info.This());
+
+    if (!dw->env) {
+        return Nan::ThrowError("The environment is already closed.");
+    }
+    MDB_val key;
+    MDB_val data;
+    key.mv_size = node::Buffer::Length(info[0]);
+    key.mv_data = node::Buffer::Data(info[0]);
+    data.mv_size = node::Buffer::Length(info[1]);
+    data.mv_data = node::Buffer::Data(info[1]);
+
+    Nan::Callback* callback = new Nan::Callback(
+        v8::Local<v8::Function>::Cast(info[2])
+    );
+
+    PutWorker* worker = new PutWorker(
+        dw->env, dw->dbi, key, data, callback
+    );
+    v8::Local<v8::Object> _this = info.This();
+    worker->SaveToPersistent("dbi", _this);
+    worker->SaveToPersistent("key", info[0]);
+    worker->SaveToPersistent("data", info[1]);
+
+    Nan::AsyncQueueWorker(worker);
+    return;
+}
+
+NAN_METHOD(DbiWrap::batchAsync) {
+    Nan::HandleScope scope;
+
+    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info.This());
+
+    if (!dw->env) {
+        return Nan::ThrowError("The environment is already closed.");
+    }
+    v8::Local<v8::Array> array = v8::Local<v8::Array>::Cast(info[0]);
+
+    int length = array->Length();
+    action_t* actions = new action_t[length];
+
+    Nan::Callback* callback = new Nan::Callback(
+        v8::Local<v8::Function>::Cast(info[2])
+    );
+
+    BatchWorker* worker = new BatchWorker(
+        dw->env, dw->dbi, actions, length, callback
+    );
+    int persistedIndex = 0;
+    for (unsigned int i = 0; i < array->Length(); i++) {
+        if (!array->Get(i)->IsObject())
+            continue;
+
+        v8::Local<v8::Object> obj = v8::Local<v8::Object>::Cast(array->Get(i));
+        v8::Local<v8::Value> key = obj->Get(Nan::New("key").ToLocalChecked());
+        v8::Local<v8::Value> type = obj->Get(Nan::New("type").ToLocalChecked());
+
+        actions[i].key.mv_size = node::Buffer::Length(key);
+        actions[i].key.mv_data = node::Buffer::Data(key);
+        worker->SaveToPersistent(persistedIndex++, key);
+        if (type->StrictEquals(Nan::New("del").ToLocalChecked())) {
+            actions[i].data.mv_data = nullptr;
+        } else {
+            v8::Local<v8::Value> value = obj->Get(Nan::New("value").ToLocalChecked());
+            actions[i].data.mv_size = node::Buffer::Length(value);
+            actions[i].data.mv_data = node::Buffer::Data(value);
+            worker->SaveToPersistent(persistedIndex++, value);
+        }
+    }
+
+    v8::Local<v8::Object> _this = info.This();
+    worker->SaveToPersistent("dbi", _this);
+
+    Nan::AsyncQueueWorker(worker);
+    return;
 }

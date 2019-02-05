@@ -457,6 +457,10 @@ public:
     static NAN_METHOD(drop);
 
     static NAN_METHOD(stat);
+
+    static NAN_METHOD(putAsync);
+
+    static NAN_METHOD(batchAsync);
 };
 
 /*

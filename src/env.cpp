@@ -142,8 +142,7 @@ NAN_METHOD(EnvWrap::open) {
     // Parse the mapSize option
     Local<Value> mapSizeOption = options->Get(Nan::New<String>("mapSize").ToLocalChecked());
     if (mapSizeOption->IsNumber()) {
-        double mapSizeDouble = mapSizeOption->NumberValue();
-        size_t mapSizeSizeT = (size_t) mapSizeDouble;
+        size_t mapSizeSizeT = mapSizeOption->IntegerValue();
         rc = mdb_env_set_mapsize(ew->env, mapSizeSizeT);
         if (rc != 0) {
             return throwLmdbError(rc);
@@ -204,8 +203,7 @@ NAN_METHOD(EnvWrap::resize) {
         return Nan::ThrowError("Only call env.resize() when there are no active transactions. Please close all transactions before calling env.resize().");
     }
 
-    double mapSizeDouble = info[0]->NumberValue();
-    size_t mapSizeSizeT = (size_t) mapSizeDouble;
+    size_t mapSizeSizeT = info[0]->IntegerValue();
     int rc = mdb_env_set_mapsize(ew->env, mapSizeSizeT);
     if (rc != 0) {
         return throwLmdbError(rc);
@@ -361,6 +359,7 @@ NAN_METHOD(EnvWrap::sync) {
     return;
 }
 
+
 void EnvWrap::setupExports(Handle<Object> exports) {
     // EnvWrap: Prepare constructor template
     Local<FunctionTemplate> envTpl = Nan::New<FunctionTemplate>(EnvWrap::ctor);
@@ -410,6 +409,7 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("close").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::close));
     dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("drop").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::drop));
     dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("stat").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::stat));
+    dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("putAsync").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::putAsync));
     // TODO: wrap mdb_stat too
     // DbiWrap: Get constructor
     EnvWrap::dbiCtor.Reset( dbiTpl->GetFunction());

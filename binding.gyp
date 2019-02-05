@@ -13,10 +13,13 @@
         "src/dbi.cpp",
         "src/cursor.cpp"
       ],
+      "includes": [ "dependencies/snappy/common.gypi" ],
       "include_dirs": [
         "<!(node -e \"require('nan')\")",
-        "dependencies/lmdb/libraries/liblmdb"
+        "dependencies/lmdb/libraries/liblmdb",
+        "dependencies/snappy/<(os_include)"
       ],
+      "dependencies": [ "dependencies/snappy/snappy.gyp:snappy" ],
       "conditions": [
         ["OS=='linux'", {
           "variables": {
@@ -51,9 +54,6 @@
             "OTHER_LDFLAGS": ["-std=c++11"],
             "CLANG_CXX_LIBRARY": "libc++"
           }
-        }],
-        ["OS=='win'", {
-            "libraries": ["ntdll.lib"]
         }],
       ],
     }
