@@ -412,7 +412,7 @@ NAN_METHOD(DbiWrap::batchAsync) {
     action_t* actions = new action_t[length];
 
     Nan::Callback* callback = new Nan::Callback(
-        v8::Local<v8::Function>::Cast(info[2])
+        v8::Local<v8::Function>::Cast(info[1])
     );
 
     BatchWorker* worker = new BatchWorker(

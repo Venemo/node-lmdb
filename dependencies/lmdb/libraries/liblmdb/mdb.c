@@ -4388,7 +4388,6 @@ int ESECT
 mdb_env_set_mapsize(MDB_env *env, mdb_size_t size)
 {
 
-fprintf(stderr, "mdb_env_set_mapsize %u %u", size, sizeof(size));
 	/* If env is already open, caller is responsible for making
 	 * sure there are no active txns.
 	 */

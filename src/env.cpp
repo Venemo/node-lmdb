@@ -410,6 +410,7 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("drop").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::drop));
     dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("stat").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::stat));
     dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("putAsync").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::putAsync));
+    dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("batchAsync").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::batchAsync));
     // TODO: wrap mdb_stat too
     // DbiWrap: Get constructor
     EnvWrap::dbiCtor.Reset( dbiTpl->GetFunction());

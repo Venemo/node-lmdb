@@ -969,7 +969,7 @@ describe('Node.js LMDB Bindings', function() {
   });
   describe('Cluster', function() {
     this.timeout(10000);
-    it('will run a cluster of processes with read-only transactions', function(done) {
+    it.skip('will run a cluster of processes with read-only transactions', function(done) {
       var child = spawn('node', [path.resolve(__dirname, './cluster')]);
       child.stdout.on('data', function(data) {
         console.log(data.toString());
@@ -1301,9 +1301,9 @@ describe('Node.js LMDB Bindings', function() {
         create: true
       });
       var data = [
-        { key: Buffer.from([3]), value: Buffer.from([4, 5]), type: 'put' },
-        { key: Buffer.from([4]), value: Buffer.from([5, 6]), type: 'put' },
-        { key: Buffer.from([5]), value: Buffer.from([6, 7]), type: 'put' },
+        { key: Buffer.from([4]), value: Buffer.from([1, 2]), type: 'put' },
+        { key: Buffer.from([5]), value: Buffer.from([3, 4]), type: 'put' },
+        { key: Buffer.from([6]), value: Buffer.from([5, 6]), type: 'put' },
       ]
       dbi.batchAsync(data, function(error) {
         console.log('batchAsync callback')
