@@ -1,6 +1,6 @@
 {
   "variables": {
-      "compiler%": "gcc",
+      "os_linux_compiler%": "gcc",
   },
   "targets": [
     {
@@ -23,7 +23,7 @@
       "conditions": [
         ["OS=='linux'", {
           "variables": {
-            "gcc_version" : "<!(<(compiler) -dumpversion | cut -d '.' -f 1)",
+            "gcc_version" : "<!(<(os_linux_compiler) -dumpversion | cut -d '.' -f 1)",
           },
           "conditions": [
             ["gcc_version>=7", {
