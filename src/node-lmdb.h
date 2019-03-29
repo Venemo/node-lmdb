@@ -34,7 +34,9 @@
 #include "lmdb.h"
 
 //Bigint added in version 10.4
-#define NODE_LMDB_HAS_BIGINT (NODE_MAJOR_VERSION > 10 || NODE_MAJOR_VERSION == 10 && NODE_MINOR_VERSION >= 4)
+#ifndef NODE_LMDB_HAS_BIGINT
+  #define NODE_LMDB_HAS_BIGINT (NODE_MAJOR_VERSION > 10 || NODE_MAJOR_VERSION == 10 && NODE_MINOR_VERSION >= 4)
+#endif
 
 using namespace v8;
 using namespace node;

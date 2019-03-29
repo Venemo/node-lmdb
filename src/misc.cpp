@@ -219,7 +219,7 @@ argtokey_callback_t argToKey(const Local<Value> &val, MDB_val &key, NodeLmdbKeyT
         
         return nullptr;
     }
-
+    #if NODE_LMDB_HAS_BIGINT
     else if (keyType == NodeLmdbKeyType::Uint64Key) {
         if (!val->IsBigInt() || !get_uint64_from_bigint(val, &currentUint64Key)) {
             Nan::ThrowError("Invalid key. Should be an unsigned 64-bit integer. (Specified with env.openDbi)");
@@ -232,6 +232,7 @@ argtokey_callback_t argToKey(const Local<Value> &val, MDB_val &key, NodeLmdbKeyT
 
         return nullptr;
     }
+    #endif
     else if (keyType == NodeLmdbKeyType::InvalidKey) {
         Nan::ThrowError("Invalid key type. This might be a bug in node-lmdb.");
     }
