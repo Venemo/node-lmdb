@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 static thread_local uint32_t currentUint32Key = 0;
-#ifdef NODE_LMDB_HAS_BIGINT
+#if NODE_LMDB_HAS_BIGINT
 static thread_local uint64_t currentUint64Key = 0;
 
 inline bool get_uint64_from_bigint(const Local<Value> &val, uint64_t *ret = nullptr) {

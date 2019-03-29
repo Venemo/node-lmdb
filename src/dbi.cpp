@@ -98,11 +98,11 @@ NAN_METHOD(DbiWrap::ctor) {
         }
         
         #if NODE_LMDB_HAS_BIGINT
-        if (keyType == NodeLmdbKeyType::Uint32Key) {
+        if (keyType == NodeLmdbKeyType::Uint32Key || keyType == NodeLmdbKeyType::Uint64Key) {
             flags |= MDB_INTEGERKEY;
         }
         #else
-        if (keyType == NodeLmdbKeyType::Uint32Key || keyType == NodeLmdbKeyType::Uint64Key) {
+        if (keyType == NodeLmdbKeyType::Uint32Key) {
             flags |= MDB_INTEGERKEY;
         }
         #endif
