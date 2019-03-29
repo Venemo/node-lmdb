@@ -26,6 +26,30 @@
 #include <stdio.h>
 
 static thread_local uint32_t currentUint32Key = 0;
+#ifdef NODE_LMDB_HAS_BIGINT
+static thread_local uint64_t currentUint64Key = 0;
+
+inline bool get_uint64_from_bigint(const Local<Value> &val, uint64_t *ret = nullptr) {
+    bool lossless = true;
+
+    Local<Context> context = v8::Isolate::GetCurrent()->GetCurrentContext();
+    Local<BigInt> bigint_val;
+    if (!val->ToBigInt(context).ToLocal(&bigint_val)) {
+        return false;
+    }
+    if(ret) {
+        *ret = bigint_val->Uint64Value(&lossless);
+    } else {
+        bigint_val->Uint64Value(&lossless);
+    }
+    return lossless;
+}
+
+inline Local<Value> uint64_blob_to_bigint(void* data) {
+    //TODO use nan when it supports bigint
+    return v8::BigInt::NewFromUnsigned(v8::Isolate::GetCurrent(), *((uint64_t*)data));
+}
+#endif
 
 void setupExportMisc(Handle<Object> exports) {
     Local<Object> versionObj = Nan::New<Object>();
@@ -62,32 +86,49 @@ NodeLmdbKeyType keyTypeFromOptions(const Local<Value> &val, NodeLmdbKeyType defa
     int keyIsUint32 = 0;
     int keyIsBuffer = 0;
     int keyIsString = 0;
+    #if NODE_LMDB_HAS_BIGINT
+    int keyIsUint64 = 0;
+    #endif
     
     setFlagFromValue(&keyIsUint32, 1, "keyIsUint32", false, obj);
     setFlagFromValue(&keyIsString, 1, "keyIsString", false, obj);
     setFlagFromValue(&keyIsBuffer, 1, "keyIsBuffer", false, obj);
-    
-    const char *keySpecificationErrorText = "You can't specify multiple key types at once. Either set keyIsUint32, or keyIsBuffer or keyIsString (default).";
+    #if NODE_LMDB_HAS_BIGINT
+    setFlagFromValue(&keyIsUint64, 1, "keyIsUint64", false, obj);
+    #endif
+   
+    int key_spec_count = keyIsUint32 + keyIsBuffer + keyIsString;
+    #if NODE_LMDB_HAS_BIGINT
+    key_spec_count += keyIsUint64;
+    #endif
+
+    if (key_spec_count == 0) {
+        return keyType;
+    } else if (key_spec_count != 1) {
+        #if NODE_LMDB_HAS_BIGINT
+        const char *keySpecificationErrorText = "You can't specify multiple key types at once. Either set keyIsUint32, or keyIsUint64, or keyIsBuffer, or keyIsString (default).";
+        #else
+        const char *keySpecificationErrorText = "You can't specify multiple key types at once. Either set keyIsUint32, or keyIsBuffer, or keyIsString (default).";
+        #endif
+        Nan::ThrowError(keySpecificationErrorText);
+        return NodeLmdbKeyType::InvalidKey;
+    }
+
     
     if (keyIsUint32) {
         keyType = NodeLmdbKeyType::Uint32Key;
-        
-        if (keyIsBuffer || keyIsString) {
-            Nan::ThrowError(keySpecificationErrorText);
-            return NodeLmdbKeyType::InvalidKey;
-        }
     }
     else if (keyIsBuffer) {
         keyType = NodeLmdbKeyType::BinaryKey;
-        
-        if (keyIsUint32 || keyIsString) {
-            Nan::ThrowError(keySpecificationErrorText);
-            return NodeLmdbKeyType::InvalidKey;
-        }
     }
     else if (keyIsString) {
         keyType = NodeLmdbKeyType::StringKey;
     }
+    #if NODE_LMDB_HAS_BIGINT
+    else if (keyIsUint64) {
+        keyType = NodeLmdbKeyType::Uint64Key;
+    }
+    #endif
     
     return keyType;
 }
@@ -99,6 +140,11 @@ NodeLmdbKeyType inferKeyType(const Local<Value> &val) {
     if (val->IsUint32()) {
         return NodeLmdbKeyType::Uint32Key;
     }
+    #if NODE_LMDB_HAS_BIGINT
+    if (val->IsBigInt() && get_uint64_from_bigint(val)) {
+        return NodeLmdbKeyType::Uint64Key;
+    }
+    #endif
     if (node::Buffer::HasInstance(val)) {
         return NodeLmdbKeyType::BinaryKey;
     }
@@ -122,6 +168,12 @@ NodeLmdbKeyType inferAndValidateKeyType(const Local<Value> &key, const Local<Val
         Nan::ThrowError("You specified keyIsUint32 on the Dbi, so you can't use other key types with it.");
         return NodeLmdbKeyType::InvalidKey;
     }
+    #if NODE_LMDB_HAS_BIGINT
+    if (dbiKeyType == NodeLmdbKeyType::Uint64Key && keyType != NodeLmdbKeyType::Uint64Key) {
+        Nan::ThrowError("You specified keyIsUint64 on the Dbi, so you can't use other key types with it.");
+        return NodeLmdbKeyType::InvalidKey;
+    }
+    #endif
     
     isValid = true;
     return keyType;
@@ -167,6 +219,19 @@ argtokey_callback_t argToKey(const Local<Value> &val, MDB_val &key, NodeLmdbKeyT
         
         return nullptr;
     }
+
+    else if (keyType == NodeLmdbKeyType::Uint64Key) {
+        if (!val->IsBigInt() || !get_uint64_from_bigint(val, &currentUint64Key)) {
+            Nan::ThrowError("Invalid key. Should be an unsigned 64-bit integer. (Specified with env.openDbi)");
+            return nullptr;
+        }
+        
+        isValid = true;
+        key.mv_size = sizeof(uint64_t);
+        key.mv_data = &currentUint64Key;
+
+        return nullptr;
+    }
     else if (keyType == NodeLmdbKeyType::InvalidKey) {
         Nan::ThrowError("Invalid key type. This might be a bug in node-lmdb.");
     }
@@ -185,6 +250,10 @@ Local<Value> keyToHandle(MDB_val &key, NodeLmdbKeyType keyType) {
         return valToBinary(key);
     case NodeLmdbKeyType::StringKey:
         return valToString(key);
+    #if NODE_LMDB_HAS_BIGINT
+    case NodeLmdbKeyType::Uint64Key:
+        return uint64_blob_to_bigint(key.mv_data);
+    #endif
     default:
         Nan::ThrowError("Unknown key type. This is a bug in node-lmdb.");
         return Nan::Undefined();

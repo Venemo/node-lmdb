@@ -67,6 +67,11 @@ NAN_METHOD(CursorWrap::ctor) {
     if (dw->keyType == NodeLmdbKeyType::Uint32Key && keyType != NodeLmdbKeyType::Uint32Key) {
         return Nan::ThrowError("You specified keyIsUint32 on the Dbi, so you can't use other key types with it.");
     }
+    #if NODE_LMDB_HAS_BIGINT
+    else if (dw->keyType == NodeLmdbKeyType::Uint64Key && keyType != NodeLmdbKeyType::Uint64Key) {
+        return Nan::ThrowError("You specified keyIsUint64 on the Dbi, so you can't use other key types with it.");
+    }
+    #endif
 
     // Open the cursor
     MDB_cursor *cursor;
