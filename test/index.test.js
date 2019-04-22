@@ -1245,7 +1245,7 @@ describe('Node.js LMDB Bindings', function() {
       }, 100);
     });
   });
-  describe('batch', function() {
+  describe.only('batch', function() {
     this.timeout(10000);
     var env;
     before(function() {
@@ -1254,6 +1254,8 @@ describe('Node.js LMDB Bindings', function() {
         path: testDirPath,
         maxDbs: 10,
         maxReaders: 422,
+        //useWritemap: true,
+        useWriteThrough: true,
         mapSize: MAX_DB_SIZE
       });
     });
