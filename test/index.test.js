@@ -1245,5 +1245,67 @@ describe('Node.js LMDB Bindings', function() {
       }, 100);
     });
   });
+  describe('Multiple transactions (64-bit keys)', function() {
+    this.timeout(10000);
+    var env;
+    var dbi;
+    before(function() {
+      env = new lmdb.Env();
+      env.open({
+        path: testDirPath,
+        maxDbs: 10
+      });
+      dbi = env.openDbi({
+        name: 'mydb6',
+        create: true,
+        keyIsUint64: true
+      });
+      var txn = env.beginTxn();
+      //9223372036854776000n is 2^63 and rounded in a regular js Number object:
+      //ie:
+      //>9223372036854776001 === 9223372036854776002
+      //true
+      //>9223372036854776001n === 9223372036854776002n
+      //false
+      txn.putString(dbi, 9223372036854776001n, 'Hello9223372036854776001');
+      txn.putString(dbi, 9223372036854776002n, 'Hello9223372036854776002');
+      txn.commit();
+    });
+    after(function() {
+      dbi.close();
+      env.close();
+    });
+    it('readonly transaction should not see uncommited changes', function() {
+      var readTxn = env.beginTxn({readOnly: true});
+      var data = readTxn.getString(dbi, 9223372036854776001n);
+      should.equal(data, 'Hello9223372036854776001');
+
+      var writeTxn = env.beginTxn();
+      writeTxn.putString(dbi, 9223372036854776001n, 'Ha ha ha');
+
+      var data2 = writeTxn.getString(dbi, 9223372036854776001n);
+      data2.should.equal('Ha ha ha');
+
+      var data3 = readTxn.getString(dbi, 9223372036854776001n);
+      should.equal(data3, 'Hello9223372036854776001');
+
+      writeTxn.commit();
+      var data4 = readTxn.getString(dbi, 9223372036854776001n);
+      should.equal(data4, 'Hello9223372036854776001');
+
+      readTxn.reset();
+      readTxn.renew();
+      var data5 = readTxn.getString(dbi, 9223372036854776001n);
+      should.equal(data5, 'Ha ha ha');
+      readTxn.abort();
+    });
+    it('readonly transaction will throw if tries to write', function() {
+      var readTxn = env.beginTxn({readOnly: true});
+      (function() {
+        readTxn.putString(dbi, 9223372036854776002n, 'hööhh');
+      }).should.throw('Permission denied');
+      readTxn.abort();
+    });
+  });
 
 });

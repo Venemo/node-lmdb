@@ -97,9 +97,15 @@ NAN_METHOD(DbiWrap::ctor) {
             return;
         }
         
+        #if NODE_LMDB_HAS_BIGINT
+        if (keyType == NodeLmdbKeyType::Uint32Key || keyType == NodeLmdbKeyType::Uint64Key) {
+            flags |= MDB_INTEGERKEY;
+        }
+        #else
         if (keyType == NodeLmdbKeyType::Uint32Key) {
             flags |= MDB_INTEGERKEY;
         }
+        #endif
 
         // Set flags for txn used to open database
         Local<Value> create = options->Get(Nan::New<String>("create").ToLocalChecked());

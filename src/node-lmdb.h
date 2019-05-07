@@ -33,6 +33,11 @@
 #include <uv.h>
 #include "lmdb.h"
 
+//Bigint added in version 10.4
+#ifndef NODE_LMDB_HAS_BIGINT
+  #define NODE_LMDB_HAS_BIGINT (NODE_MAJOR_VERSION > 10 || NODE_MAJOR_VERSION == 10 && NODE_MINOR_VERSION >= 4)
+#endif
+
 using namespace v8;
 using namespace node;
 
@@ -53,6 +58,11 @@ enum class NodeLmdbKeyType {
     // LMDB default key format - Appears to V8 as node::Buffer
     BinaryKey = 3,
 
+#if NODE_LMDB_HAS_BIGINT
+    // LMDB fixed size integer key with 32 bit keys - Appearts to V8 as a Bigint which 
+    // is then attempted to be interpreted as aUint64
+    Uint64Key = 4,
+#endif
 };
 
 // Exports misc stuff to the module
@@ -192,6 +202,7 @@ public:
         * name: the name of the database (or null to use the unnamed database)
         * create: if true, the database will be created if it doesn't exist
         * keyIsUint32: if true, keys are treated as 32-bit unsigned integers
+        * keyIsUint64: (only in node 10.4.0 or later) if true, keys are treated as 64-bit unsigned integers
         * dupSort: if true, the database can hold multiple items with the same key
         * reverseKey: keys are strings to be compared in reverse order
         * dupFixed: if dupSort is true, indicates that the data items are all the same size
