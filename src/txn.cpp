@@ -237,7 +237,7 @@ NAN_METHOD(TxnWrap::putBoolean) {
     return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
         data.mv_size = sizeof(double);
         data.mv_data = new bool;
-        *((bool*)data.mv_data) = Nan::To<bool>(info[2]).FromJust();
+        *((bool*)data.mv_data) = Nan::To<v8::Boolean>(info[2]).ToLocalChecked()->Value();
     }, [](MDB_val &data) -> void {
         delete (bool*)data.mv_data;
     });

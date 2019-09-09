@@ -6,8 +6,7 @@ var path = require('path');
 var numCPUs = require('os').cpus().length;
 
 var lmdb = require('..');
-
-var DB_SIZE = 5 * 1024 * 1024;
+const MAX_DB_SIZE = 256 * 1024 * 1024;
 
 if (cluster.isMaster) {
 
@@ -17,7 +16,7 @@ if (cluster.isMaster) {
   env.open({
     path: path.resolve(__dirname, './testdata'),
     maxDbs: 10,
-    mapSize: DB_SIZE,
+    mapSize: MAX_DB_SIZE,
     maxReaders: 126
   });
 
@@ -26,11 +25,12 @@ if (cluster.isMaster) {
     create: true
   });
 
-  var value = new Buffer('48656c6c6f2c20776f726c6421', 'hex');
+  var workerCount = Math.min(numCPUs * 2, 20);
+  var value = Buffer.from('48656c6c6f2c20776f726c6421', 'hex');
 
   // This will start as many workers as there are CPUs available.
   var workers = [];
-  for (var i = 0; i < numCPUs; i++) {
+  for (var i = 0; i < workerCount; i++) {
     var worker = cluster.fork();
     workers.push(worker);
   }
@@ -42,7 +42,7 @@ if (cluster.isMaster) {
       messages.push(msg);
       // Once every worker has replied with a response for the value
       // we can exit the test.
-      if (messages.length === numCPUs) {
+      if (messages.length === workerCount) {
         dbi.close();
         env.close();
         for (var i = 0; i < messages.length; i ++) {
@@ -60,9 +60,10 @@ if (cluster.isMaster) {
 
   txn.commit();
 
-  workers.forEach(function(worker) {
+  for (var i = 0; i < workers.length; i++) {
+    var worker = workers[i];
     worker.send({key: 'key' + i});
-  });
+  };
 
 } else {
 
@@ -72,7 +73,7 @@ if (cluster.isMaster) {
   env.open({
     path: path.resolve(__dirname, './testdata'),
     maxDbs: 10,
-    mapSize: DB_SIZE,
+    mapSize: MAX_DB_SIZE,
     maxReaders: 126,
     readOnly: true
   });
@@ -80,12 +81,19 @@ if (cluster.isMaster) {
   var dbi = env.openDbi({
     name: 'cluster'
   });
-  var txn = env.beginTxn({readOnly: true});
 
   process.on('message', function(msg) {
     if (msg.key) {
+      var txn = env.beginTxn({readOnly: true});
       var value = txn.getBinary(dbi, msg.key);
-      process.send(value.toString('hex'));
+
+      if (value === null) {
+        process.send("");
+      } else {
+        process.send(value.toString('hex'));
+      }
+
+      txn.abort();
     }
   });
 

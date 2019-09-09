@@ -221,7 +221,7 @@ static void fillDataFromArg1(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB
     else if (info[1]->IsBoolean()) {
         data.mv_size = sizeof(double);
         data.mv_data = new bool;
-        *((bool*)data.mv_data) = Nan::To<bool>(info[1]).FromJust();
+        *((bool*)data.mv_data) = Nan::To<v8::Boolean>(info[1]).ToLocalChecked()->Value();
     }
     else {
         Nan::ThrowError("Invalid data type.");

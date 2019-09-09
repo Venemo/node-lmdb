@@ -42,7 +42,7 @@ void setupExportMisc(Local<Object> exports) {
 
 void setFlagFromValue(int *flags, int flag, const char *name, bool defaultValue, Local<Object> options) {
     Local<Value> opt = options->Get(Nan::New<String>(name).ToLocalChecked());
-    if (opt->IsBoolean() ? Nan::To<bool>(opt).FromJust() : defaultValue) {
+    if (opt->IsBoolean() ? Nan::To<v8::Boolean>(opt).ToLocalChecked()->Value() : defaultValue) {
         *flags |= flag;
     }
 }
