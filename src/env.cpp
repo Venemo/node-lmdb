@@ -80,7 +80,7 @@ int applyUint32Setting(int (*f)(MDB_env *, T), MDB_env* e, Local<Object> options
     int rc;
     const Local<Value> value = options->Get(Nan::New<String>(keyName).ToLocalChecked());
     if (value->IsUint32()) {
-        rc = f(e, value->Uint32Value());
+        rc = f(e, value->Uint32Value(Nan::GetCurrentContext()).FromJust());
     }
     else {
         rc = f(e, dflt);
@@ -101,8 +101,8 @@ NAN_METHOD(EnvWrap::open) {
         return Nan::ThrowError("The environment is already closed.");
     }
 
-    Local<Object> options = info[0]->ToObject();
-    Local<String> path = options->Get(Nan::New<String>("path").ToLocalChecked())->ToString();
+    Local<Object> options = info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>());
+    Local<String> path = options->Get(Nan::New<String>("path").ToLocalChecked())->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>());
 
     // Parse the maxDbs option
     rc = applyUint32Setting<unsigned>(&mdb_env_set_maxdbs, ew->env, options, 10, "maxDbs");
@@ -113,12 +113,12 @@ NAN_METHOD(EnvWrap::open) {
     // Parse the mapSize option
     Local<Value> mapSizeOption = options->Get(Nan::New<String>("mapSize").ToLocalChecked());
     if (mapSizeOption->IsNumber()) {
-        double mapSizeDouble = mapSizeOption->NumberValue();
+        double mapSizeDouble = mapSizeOption->NumberValue(Nan::GetCurrentContext()).FromJust();
         size_t mapSizeSizeT = (size_t) mapSizeDouble;
         rc = mdb_env_set_mapsize(ew->env, mapSizeSizeT);
         if (throwLMDBError(rc)) {
-        return;
-    }
+            return;
+        }
     }
 
     // Parse the maxDbs option
@@ -141,7 +141,7 @@ NAN_METHOD(EnvWrap::open) {
     flags |= MDB_NOTLS;
 
     // TODO: make file attributes configurable
-    rc = mdb_env_open(ew->env, *String::Utf8Value(path), flags, 0664);
+    rc = mdb_env_open(ew->env, *Nan::Utf8String(path), flags, 0664);
 
     if (rc != 0) {
         mdb_env_close(ew->env);
@@ -309,7 +309,7 @@ NAN_METHOD(EnvWrap::getUsedSize) {
 }
 
 NAN_METHOD(EnvWrap::setMapSize) {
-    unsigned size = info[0]->Uint32Value();
+    unsigned size = info[0]->Uint32Value(Nan::GetCurrentContext()).FromJust();
 
     if (size % ::getOSPageSize() != 0) {
         return Nan::ThrowError("Size must be a multiplier of OS\' page size.");
@@ -338,7 +338,7 @@ NAN_METHOD(EnvWrap::getMaxReaders) {
 }
 
 NAN_METHOD(EnvWrap::setMaxReaders) {
-    unsigned num = info[0]->Uint32Value();
+    unsigned num = info[0]->Uint32Value(Nan::GetCurrentContext()).FromJust();
 
     auto ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info.This());
     auto env = ew->env;
@@ -350,7 +350,7 @@ NAN_METHOD(EnvWrap::setMaxReaders) {
     return info.GetReturnValue().SetUndefined();
 }
 
-void EnvWrap::setupExports(Handle<Object> exports) {
+void EnvWrap::setupExports(Local<Object> exports) {
     // EnvWrap: Prepare constructor template
     Local<FunctionTemplate> envTpl = Nan::New<FunctionTemplate>(EnvWrap::ctor);
     envTpl->SetClassName(Nan::New<String>("Env").ToLocalChecked());
@@ -369,8 +369,8 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     envTpl->PrototypeTemplate()->Set(Nan::New<String>("setMaxReaders").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::setMaxReaders));
     // TODO: wrap mdb_env_copy too
 
-    auto envCtor = envTpl->GetFunction();
-    envCtor->Set(Nan::New<String>("getOSPageSize").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::getOSPageSize)->GetFunction());
+    auto envCtor = envTpl->GetFunction(Nan::GetCurrentContext()).ToLocalChecked();
+    envCtor->Set(Nan::New<String>("getOSPageSize").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::getOSPageSize)->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
 
     // TxnWrap: Prepare constructor template
     Local<FunctionTemplate> txnTpl = Nan::New<FunctionTemplate>(TxnWrap::ctor);
@@ -395,7 +395,7 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     // TODO: wrap mdb_cmp too
     // TODO: wrap mdb_dcmp too
     // TxnWrap: Get constructor
-    EnvWrap::txnCtor.Reset( txnTpl->GetFunction());
+    EnvWrap::txnCtor.Reset( txnTpl->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
 
     // DbiWrap: Prepare constructor template
     Local<FunctionTemplate> dbiTpl = Nan::New<FunctionTemplate>(DbiWrap::ctor);
@@ -407,7 +407,7 @@ void EnvWrap::setupExports(Handle<Object> exports) {
     dbiTpl->PrototypeTemplate()->Set(Nan::New<String>("stat").ToLocalChecked(), Nan::New<FunctionTemplate>(DbiWrap::stat));
     // TODO: wrap mdb_stat too
     // DbiWrap: Get constructor
-    EnvWrap::dbiCtor.Reset( dbiTpl->GetFunction());
+    EnvWrap::dbiCtor.Reset( dbiTpl->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
 
     // Set exports
     exports->Set(Nan::New<String>("Env").ToLocalChecked(), envCtor);

@@ -62,11 +62,11 @@ NAN_METHOD(DbiWrap::ctor) {
     Local<String> name;
     bool nameIsNull = false;
 
-    EnvWrap *ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info[0]->ToObject());
+    EnvWrap *ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
     if (info[1]->IsObject()) {
-        Local<Object> options = info[1]->ToObject();
+        Local<Object> options = info[1]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>());
         nameIsNull = options->Get(Nan::New<String>("name").ToLocalChecked())->IsNull();
-        name = options->Get(Nan::New<String>("name").ToLocalChecked())->ToString();
+        name = options->Get(Nan::New<String>("name").ToLocalChecked())->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>());
 
         // Get flags from options
 
@@ -90,7 +90,7 @@ NAN_METHOD(DbiWrap::ctor) {
 
         // Set flags for txn used to open database
         Local<Value> create = options->Get(Nan::New<String>("create").ToLocalChecked());
-        if (create->IsBoolean() ? !create->BooleanValue() : false) {
+        if (create->IsBoolean() ? !Nan::To<bool>(create).FromJust() : false) {
             txnFlags |= MDB_RDONLY;
         }
     }
@@ -109,7 +109,7 @@ NAN_METHOD(DbiWrap::ctor) {
 
     // Open database
     // NOTE: nullptr in place of the name means using the unnamed database.
-    rc = mdb_dbi_open(txn, nameIsNull ? nullptr : *String::Utf8Value(name), flags, &dbi);
+    rc = mdb_dbi_open(txn, nameIsNull ? nullptr : *Nan::Utf8String(name), flags, &dbi);
     if (rc != 0) {
         mdb_txn_abort(txn);
         if (throwLMDBError(rc)) {
@@ -152,9 +152,9 @@ NAN_METHOD(DbiWrap::drop) {
 
     // Check if the database should be deleted
     if (info.Length() == 2 && info[1]->IsObject()) {
-        Handle<Object> options = info[1]->ToObject();
+        Local<Object> options = info[1]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>());
         Local<Value> opt = options->Get(Nan::New<String>("justFreePages").ToLocalChecked());
-        del = opt->IsBoolean() ? !(opt->BooleanValue()) : 1;
+        del = opt->IsBoolean() ? !(Nan::To<bool>(opt).FromJust()) : 1;
     }
 
     // Begin transaction
@@ -188,7 +188,7 @@ NAN_METHOD(DbiWrap::stat) {
         return Nan::ThrowError("dbi.stat should be called with a single argument which is a txn.");
     }
 
-    TxnWrap *txn = Nan::ObjectWrap::Unwrap<TxnWrap>(info[0]->ToObject());
+    TxnWrap *txn = Nan::ObjectWrap::Unwrap<TxnWrap>(info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
 
     MDB_stat stat;
     mdb_stat(txn->txn, dw->dbi, &stat);

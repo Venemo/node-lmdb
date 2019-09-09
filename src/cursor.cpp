@@ -41,8 +41,8 @@ CursorWrap::~CursorWrap() {
 
 NAN_METHOD(CursorWrap::ctor) {
     // Get arguments
-    TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info[0]->ToObject());
-    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[1]->ToObject());
+    TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
+    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[1]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
 
     // Open the cursor
     MDB_cursor *cursor;
@@ -129,7 +129,7 @@ Nan::NAN_METHOD_RETURN_TYPE CursorWrap::getCommon(
             // In this case, we expect the key/data pair to be correctly filled
             const unsigned argc = 2;
             Local<Value> argv[argc] = { keyHandle, dataHandle };
-            info[info.Length() - 1].As<Function>()->Call(Nan::Undefined(), argc, argv);
+            Nan::Call(info[info.Length() - 1].As<Function>(), Nan::GetCurrentContext()->Global(), argc, argv);
         }
     }
 
@@ -207,7 +207,7 @@ NAN_METHOD(CursorWrap::goToRange) {
 
 static void fillDataFromArg1(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) {
     if (info[1]->IsString()) {
-        CustomExternalStringResource::writeTo(info[1]->ToString(), &data);
+        CustomExternalStringResource::writeTo(info[1]->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>()), &data);
     }
     else if (node::Buffer::HasInstance(info[1])) {
         data.mv_size = node::Buffer::Length(info[1]);
@@ -221,7 +221,7 @@ static void fillDataFromArg1(CursorWrap* cw, Nan::NAN_METHOD_ARGS_TYPE info, MDB
     else if (info[1]->IsBoolean()) {
         data.mv_size = sizeof(double);
         data.mv_data = new bool;
-        *((bool*)data.mv_data) = info[1]->ToBoolean()->Value();
+        *((bool*)data.mv_data) = Nan::To<bool>(info[1]).FromJust();
     }
     else {
         Nan::ThrowError("Invalid data type.");
@@ -258,7 +258,7 @@ NAN_METHOD(CursorWrap::goToDupRange) {
     }, fillDataFromArg1, freeDataFromArg1, nullptr);
 }
 
-void CursorWrap::setupExports(Handle<Object> exports) {
+void CursorWrap::setupExports(Local<Object> exports) {
     // CursorWrap: Prepare constructor template
     Local<FunctionTemplate> cursorTpl = Nan::New<FunctionTemplate>(CursorWrap::ctor);
     cursorTpl->SetClassName(Nan::New<String>("Cursor").ToLocalChecked());
@@ -286,5 +286,5 @@ void CursorWrap::setupExports(Handle<Object> exports) {
     cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("del").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::del));
 
     // Set exports
-    exports->Set(Nan::New<String>("Cursor").ToLocalChecked(), cursorTpl->GetFunction());
+    exports->Set(Nan::New<String>("Cursor").ToLocalChecked(), cursorTpl->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
 }

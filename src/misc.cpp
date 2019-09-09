@@ -27,7 +27,7 @@
 
 static void DontFree(char* data, void* hint) {}
 
-void setupExportMisc(Handle<Object> exports) {
+void setupExportMisc(Local<Object> exports) {
     Local<Object> versionObj = Nan::New<Object>();
 
     int major, minor, patch;
@@ -42,7 +42,7 @@ void setupExportMisc(Handle<Object> exports) {
 
 void setFlagFromValue(int *flags, int flag, const char *name, bool defaultValue, Local<Object> options) {
     Local<Value> opt = options->Get(Nan::New<String>(name).ToLocalChecked());
-    if (opt->IsBoolean() ? opt->BooleanValue() : defaultValue) {
+    if (opt->IsBoolean() ? Nan::To<bool>(opt).FromJust() : defaultValue) {
         *flags |= flag;
     }
 }
@@ -54,7 +54,7 @@ argtokey_callback_t argToKey(const Local<Value> &val, MDB_val &key, bool keyIsUi
         return nullptr;
     }
 
-    // Handle buffer
+    // Local buffer
     if (node::Buffer::HasInstance(val)) {
         key.mv_size = node::Buffer::Length(val);
         key.mv_data = node::Buffer::Data(val);
@@ -70,10 +70,10 @@ argtokey_callback_t argToKey(const Local<Value> &val, MDB_val &key, bool keyIsUi
         return nullptr;
     }
 
-    // Handle uint32_t key
+    // Local uint32_t key
     if (keyIsUint32) {
         uint32_t *v = new uint32_t;
-        *v = val->Uint32Value();
+        *v = val->Uint32Value(Nan::GetCurrentContext()).FromJust();
 
         key.mv_size = sizeof(uint32_t);
         key.mv_data = v;
@@ -83,8 +83,8 @@ argtokey_callback_t argToKey(const Local<Value> &val, MDB_val &key, bool keyIsUi
         });
     }
 
-    // Handle string key
-    CustomExternalStringResource::writeTo(val->ToString(), &key);
+    // Local string key
+    CustomExternalStringResource::writeTo(val->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>()), &key);
     return ([](MDB_val &key) -> void {
         delete[] (uint16_t*)key.mv_data;
     });
@@ -141,8 +141,8 @@ Local<Value> valToBoolean(MDB_val &data) {
 
 void consoleLog(const char *msg) {
     Local<String> str = Nan::New("console.log('").ToLocalChecked();
-    str = String::Concat(str, Nan::New<String>(msg).ToLocalChecked());
-    str = String::Concat(str, Nan::New("');").ToLocalChecked());
+    str = String::Concat(v8::Isolate::GetCurrent(), str, Nan::New<String>(msg).ToLocalChecked());
+    str = String::Concat(v8::Isolate::GetCurrent(), str, Nan::New("');").ToLocalChecked());
 
     Local<Script> script = Nan::CompileScript(str).ToLocalChecked();
     Nan::RunScript(script);
@@ -150,8 +150,8 @@ void consoleLog(const char *msg) {
 
 void consoleLog(Local<Value> val) {
     Local<String> str = Nan::New<String>("console.log('").ToLocalChecked();
-    str = String::Concat(str, val->ToString());
-    str = String::Concat(str, Nan::New<String>("');").ToLocalChecked());
+    str = String::Concat(v8::Isolate::GetCurrent(), str, val->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>()));
+    str = String::Concat(v8::Isolate::GetCurrent(), str, Nan::New<String>("');").ToLocalChecked());
 
     Local<Script> script = Nan::CompileScript(str).ToLocalChecked();
     Nan::RunScript(script);
@@ -174,10 +174,10 @@ bool throwLMDBError(int code) {
     return false;
 }
 
-void CustomExternalStringResource::writeTo(Handle<String> str, MDB_val *val) {
+void CustomExternalStringResource::writeTo(Local<String> str, MDB_val *val) {
     unsigned int l = str->Length() + 1;
     uint16_t *d = new uint16_t[l];
-    str->Write(d);
+    str->Write(v8::Isolate::GetCurrent(), d);
     d[l - 1] = 0;
 
     val->mv_data = d;

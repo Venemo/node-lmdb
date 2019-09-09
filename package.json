@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "bindings": "*",
-    "nan": "^2.4"
+    "nan": "^2.14"
   },
   "devDependencies": {
     "benchmark": "^2.1.0",

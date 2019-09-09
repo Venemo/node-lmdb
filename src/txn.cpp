@@ -40,11 +40,11 @@ TxnWrap::~TxnWrap() {
 }
 
 NAN_METHOD(TxnWrap::ctor) {
-    EnvWrap *ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info[0]->ToObject());
+    EnvWrap *ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
     int flags = 0;
 
     if (info[1]->IsObject()) {
-        Local<Object> options = info[1]->ToObject();
+        Local<Object> options = info[1]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>());
 
         // Get flags from options
 
@@ -127,7 +127,7 @@ NAN_METHOD(TxnWrap::renew) {
 
 Nan::NAN_METHOD_RETURN_TYPE TxnWrap::getCommon(Nan::NAN_METHOD_ARGS_TYPE info, Local<Value> (*successFunc)(MDB_val&)) {
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
-    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject());
+    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
 
     if (!tw->txn) {
         return Nan::ThrowError("The transaction is already closed.");
@@ -179,7 +179,7 @@ NAN_METHOD(TxnWrap::getBoolean) {
 
 Nan::NAN_METHOD_RETURN_TYPE TxnWrap::putCommon(Nan::NAN_METHOD_ARGS_TYPE info, void (*fillFunc)(Nan::NAN_METHOD_ARGS_TYPE info, MDB_val&), void (*freeData)(MDB_val&)) {
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
-    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject());
+    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
 
     if (!tw->txn) {
         return Nan::ThrowError("The transaction is already closed.");
@@ -208,7 +208,7 @@ Nan::NAN_METHOD_RETURN_TYPE TxnWrap::putCommon(Nan::NAN_METHOD_ARGS_TYPE info, v
 
 NAN_METHOD(TxnWrap::putString) {
     return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
-        CustomExternalStringResource::writeTo(info[2]->ToString(), &data);
+        CustomExternalStringResource::writeTo(info[2]->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>()), &data);
     }, [](MDB_val &data) -> void {
         delete[] (uint16_t*)data.mv_data;
     });
@@ -237,7 +237,7 @@ NAN_METHOD(TxnWrap::putBoolean) {
     return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
         data.mv_size = sizeof(double);
         data.mv_data = new bool;
-        *((bool*)data.mv_data) = info[2]->ToBoolean()->Value();
+        *((bool*)data.mv_data) = Nan::To<bool>(info[2]).FromJust();
     }, [](MDB_val &data) -> void {
         delete (bool*)data.mv_data;
     });
@@ -245,7 +245,7 @@ NAN_METHOD(TxnWrap::putBoolean) {
 
 NAN_METHOD(TxnWrap::del) {
     TxnWrap *tw = Nan::ObjectWrap::Unwrap<TxnWrap>(info.This());
-    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject());
+    DbiWrap *dw = Nan::ObjectWrap::Unwrap<DbiWrap>(info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
 
     if (!tw->txn) {
         return Nan::ThrowError("The transaction is already closed.");
