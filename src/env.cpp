@@ -78,7 +78,7 @@ NAN_METHOD(EnvWrap::ctor) {
 template<class T>
 int applyUint32Setting(int (*f)(MDB_env *, T), MDB_env* e, Local<Object> options, T dflt, const char* keyName) {
     int rc;
-    const Local<Value> value = options->Get(Nan::New<String>(keyName).ToLocalChecked());
+    const Local<Value> value = Nan::Get(options, Nan::New<String>(keyName).ToLocalChecked()).ToLocalChecked();
     if (value->IsUint32()) {
         rc = f(e, value->Uint32Value(Nan::GetCurrentContext()).FromJust());
     }
@@ -102,7 +102,7 @@ NAN_METHOD(EnvWrap::open) {
     }
 
     Local<Object> options = info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>());
-    Local<String> path = options->Get(Nan::New<String>("path").ToLocalChecked())->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>());
+    Local<String> path = Nan::Get(options, Nan::New<String>("path").ToLocalChecked()).ToLocalChecked()->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>());
 
     // Parse the maxDbs option
     rc = applyUint32Setting<unsigned>(&mdb_env_set_maxdbs, ew->env, options, 10, "maxDbs");
@@ -111,7 +111,7 @@ NAN_METHOD(EnvWrap::open) {
     }
 
     // Parse the mapSize option
-    Local<Value> mapSizeOption = options->Get(Nan::New<String>("mapSize").ToLocalChecked());
+    Local<Value> mapSizeOption = Nan::Get(options, Nan::New<String>("mapSize").ToLocalChecked()).ToLocalChecked();
     if (mapSizeOption->IsNumber()) {
         double mapSizeDouble = mapSizeOption->NumberValue(Nan::GetCurrentContext()).FromJust();
         size_t mapSizeSizeT = (size_t) mapSizeDouble;
@@ -225,7 +225,8 @@ NAN_METHOD(EnvWrap::sync) {
         }
         else {
             argv[0] = Nan::Error(mdb_strerror(d->rc));
-            argv[0].As<Object>()->Set(Nan::New("code").ToLocalChecked(), Nan::New(d->rc));
+            Nan::Set(argv[0].As<Object>(), Nan::New("code").ToLocalChecked(), Nan::New(d->rc));
+            //argv[0].As<Object>()->Set(Nan::New("code").ToLocalChecked(), Nan::New(d->rc));
         }
 
         d->callback->Call(argc, argv);
@@ -263,12 +264,12 @@ NAN_METHOD(EnvWrap::getStat) {
         return;
     }
     auto result = Nan::New<Object>();
-    result->Set(Nan::New<String>("pSize").ToLocalChecked(), Nan::New((unsigned)stat.ms_psize));
-    result->Set(Nan::New<String>("depth").ToLocalChecked(), Nan::New((unsigned)stat.ms_depth));
-    result->Set(Nan::New<String>("branchPages").ToLocalChecked(), Nan::New((unsigned)stat.ms_branch_pages));
-    result->Set(Nan::New<String>("leafPages").ToLocalChecked(), Nan::New((unsigned)stat.ms_leaf_pages));
-    result->Set(Nan::New<String>("overflowPages").ToLocalChecked(), Nan::New((unsigned)stat.ms_overflow_pages));
-    result->Set(Nan::New<String>("entries").ToLocalChecked(), Nan::New((unsigned)stat.ms_entries));
+    Nan::Set(result, Nan::New<String>("pSize").ToLocalChecked(), Nan::New((unsigned)stat.ms_psize));
+    Nan::Set(result, Nan::New<String>("depth").ToLocalChecked(), Nan::New((unsigned)stat.ms_depth));
+    Nan::Set(result, Nan::New<String>("branchPages").ToLocalChecked(), Nan::New((unsigned)stat.ms_branch_pages));
+    Nan::Set(result, Nan::New<String>("leafPages").ToLocalChecked(), Nan::New((unsigned)stat.ms_leaf_pages));
+    Nan::Set(result, Nan::New<String>("overflowPages").ToLocalChecked(), Nan::New((unsigned)stat.ms_overflow_pages));
+    Nan::Set(result, Nan::New<String>("entries").ToLocalChecked(), Nan::New((unsigned)stat.ms_entries));
 
     return info.GetReturnValue().Set(result);
 }
@@ -282,11 +283,11 @@ NAN_METHOD(EnvWrap::getInfo) {
         return;
     }
     auto result = Nan::New<Object>();
-    result->Set(Nan::New<String>("mapSize").ToLocalChecked(), Nan::New((unsigned)inf.me_mapsize));
-    result->Set(Nan::New<String>("lastPgNo").ToLocalChecked(), Nan::New((unsigned)inf.me_last_pgno));
-    result->Set(Nan::New<String>("lastTxnId").ToLocalChecked(), Nan::New((unsigned)inf.me_last_txnid));
-    result->Set(Nan::New<String>("maxReaders").ToLocalChecked(), Nan::New((unsigned)inf.me_maxreaders));
-    result->Set(Nan::New<String>("numReaders").ToLocalChecked(), Nan::New((unsigned)inf.me_numreaders));
+    Nan::Set(result, Nan::New<String>("mapSize").ToLocalChecked(), Nan::New((unsigned)inf.me_mapsize));
+    Nan::Set(result, Nan::New<String>("lastPgNo").ToLocalChecked(), Nan::New((unsigned)inf.me_last_pgno));
+    Nan::Set(result, Nan::New<String>("lastTxnId").ToLocalChecked(), Nan::New((unsigned)inf.me_last_txnid));
+    Nan::Set(result, Nan::New<String>("maxReaders").ToLocalChecked(), Nan::New((unsigned)inf.me_maxreaders));
+    Nan::Set(result, Nan::New<String>("numReaders").ToLocalChecked(), Nan::New((unsigned)inf.me_numreaders));
 
     return info.GetReturnValue().Set(result);
 }
@@ -370,7 +371,7 @@ void EnvWrap::setupExports(Local<Object> exports) {
     // TODO: wrap mdb_env_copy too
 
     auto envCtor = envTpl->GetFunction(Nan::GetCurrentContext()).ToLocalChecked();
-    envCtor->Set(Nan::New<String>("getOSPageSize").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::getOSPageSize)->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
+    Nan::Set(envCtor, Nan::New<String>("getOSPageSize").ToLocalChecked(), Nan::New<FunctionTemplate>(EnvWrap::getOSPageSize)->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
 
     // TxnWrap: Prepare constructor template
     Local<FunctionTemplate> txnTpl = Nan::New<FunctionTemplate>(TxnWrap::ctor);
@@ -410,5 +411,5 @@ void EnvWrap::setupExports(Local<Object> exports) {
     EnvWrap::dbiCtor.Reset( dbiTpl->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
 
     // Set exports
-    exports->Set(Nan::New<String>("Env").ToLocalChecked(), envCtor);
+    Nan::Set(exports, Nan::New<String>("Env").ToLocalChecked(), envCtor);
 }

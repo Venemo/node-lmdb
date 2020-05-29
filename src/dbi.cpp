@@ -65,8 +65,8 @@ NAN_METHOD(DbiWrap::ctor) {
     EnvWrap *ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info[0]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>()));
     if (info[1]->IsObject()) {
         Local<Object> options = info[1]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>());
-        nameIsNull = options->Get(Nan::New<String>("name").ToLocalChecked())->IsNull();
-        name = options->Get(Nan::New<String>("name").ToLocalChecked())->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>());
+        nameIsNull = Nan::Get(options, Nan::New<String>("name").ToLocalChecked()).ToLocalChecked()->IsNull();
+        name = Nan::Get(options, Nan::New<String>("name").ToLocalChecked()).ToLocalChecked()->ToString(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::String>());
 
         // Get flags from options
 
@@ -89,8 +89,8 @@ NAN_METHOD(DbiWrap::ctor) {
         }
 
         // Set flags for txn used to open database
-        Local<Value> create = options->Get(Nan::New<String>("create").ToLocalChecked());
-        if (create->IsBoolean() ? !create->BooleanValue(Nan::GetCurrentContext()).ToChecked() : true) {
+        Local<Value> create = Nan::Get(options, Nan::New<String>("create").ToLocalChecked()).ToLocalChecked();
+        if (create->IsBoolean() ? !create->BooleanValue(Nan::GetCurrentContext()->GetIsolate()) : true) {
             txnFlags |= MDB_RDONLY;
         }
     }
@@ -153,7 +153,7 @@ NAN_METHOD(DbiWrap::drop) {
     // Check if the database should be deleted
     if (info.Length() == 2 && info[1]->IsObject()) {
         Local<Object> options = info[1]->ToObject(Nan::GetCurrentContext()).FromMaybe(v8::Local<v8::Object>());
-        Local<Value> opt = options->Get(Nan::New<String>("justFreePages").ToLocalChecked());
+        Local<Value> opt = Nan::Get(options, Nan::New<String>("justFreePages").ToLocalChecked()).ToLocalChecked();
         del = opt->IsBoolean() ? !(Nan::To<v8::Boolean>(opt).ToLocalChecked()->Value()) : 1;
     }
 
@@ -194,11 +194,11 @@ NAN_METHOD(DbiWrap::stat) {
     mdb_stat(txn->txn, dw->dbi, &stat);
 
     Local<Object> obj = Nan::New<Object>();
-    obj->Set(Nan::New<String>("pageSize").ToLocalChecked(), Nan::New<Number>(stat.ms_psize));
-    obj->Set(Nan::New<String>("treeDepth").ToLocalChecked(), Nan::New<Number>(stat.ms_depth));
-    obj->Set(Nan::New<String>("treeBranchPageCount").ToLocalChecked(), Nan::New<Number>(stat.ms_branch_pages));
-    obj->Set(Nan::New<String>("treeLeafPageCount").ToLocalChecked(), Nan::New<Number>(stat.ms_leaf_pages));
-    obj->Set(Nan::New<String>("entryCount").ToLocalChecked(), Nan::New<Number>(stat.ms_entries));
+    Nan::Set(obj, Nan::New<String>("pageSize").ToLocalChecked(), Nan::New<Number>(stat.ms_psize));
+    Nan::Set(obj, Nan::New<String>("treeDepth").ToLocalChecked(), Nan::New<Number>(stat.ms_depth));
+    Nan::Set(obj, Nan::New<String>("treeBranchPageCount").ToLocalChecked(), Nan::New<Number>(stat.ms_branch_pages));
+    Nan::Set(obj, Nan::New<String>("treeLeafPageCount").ToLocalChecked(), Nan::New<Number>(stat.ms_leaf_pages));
+    Nan::Set(obj, Nan::New<String>("entryCount").ToLocalChecked(), Nan::New<Number>(stat.ms_entries));
 
     info.GetReturnValue().Set(obj);
 }

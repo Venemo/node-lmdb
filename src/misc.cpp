@@ -32,16 +32,16 @@ void setupExportMisc(Local<Object> exports) {
 
     int major, minor, patch;
     char *str = mdb_version(&major, &minor, &patch);
-    versionObj->Set(Nan::New<String>("versionString").ToLocalChecked(), Nan::New<String>(str).ToLocalChecked());
-    versionObj->Set(Nan::New<String>("major").ToLocalChecked(), Nan::New<Integer>(major));
-    versionObj->Set(Nan::New<String>("minor").ToLocalChecked(), Nan::New<Integer>(minor));
-    versionObj->Set(Nan::New<String>("patch").ToLocalChecked(), Nan::New<Integer>(patch));
+    Nan::Set(versionObj, Nan::New<String>("versionString").ToLocalChecked(), Nan::New<String>(str).ToLocalChecked());
+    Nan::Set(versionObj, Nan::New<String>("major").ToLocalChecked(), Nan::New<Integer>(major));
+    Nan::Set(versionObj, Nan::New<String>("minor").ToLocalChecked(), Nan::New<Integer>(minor));
+    Nan::Set(versionObj, Nan::New<String>("patch").ToLocalChecked(), Nan::New<Integer>(patch));
 
-    exports->Set(Nan::New<String>("version").ToLocalChecked(), versionObj);
+    Nan::Set(exports, Nan::New<String>("version").ToLocalChecked(), versionObj);
 }
 
 void setFlagFromValue(int *flags, int flag, const char *name, bool defaultValue, Local<Object> options) {
-    Local<Value> opt = options->Get(Nan::New<String>(name).ToLocalChecked());
+    Local<Value> opt = Nan::Get(options, Nan::New<String>(name).ToLocalChecked()).ToLocalChecked();
     if (opt->IsBoolean() ? Nan::To<v8::Boolean>(opt).ToLocalChecked()->Value() : defaultValue) {
         *flags |= flag;
     }
@@ -167,7 +167,7 @@ void consoleLogN(int n) {
 bool throwLMDBError(int code) {
     if (code != 0) {
         auto err = Nan::Error(mdb_strerror(code));
-        err.As<Object>()->Set(Nan::New("code").ToLocalChecked(), Nan::New(code));
+        Nan::Set(err.As<Object>(), Nan::New("code").ToLocalChecked(), Nan::New(code));
         Nan::ThrowError(err);
         return true;
     }
