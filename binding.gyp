@@ -47,7 +47,7 @@
             "-fPIC",
             "-fvisibility=hidden",
             "-fvisibility-inlines-hidden",
-            "-std=c++0x"
+            "-std=c++14"
           ]
         }],
         ["OS=='mac'", {
@@ -57,9 +57,9 @@
             }]
           ],
           "xcode_settings": {
-            "OTHER_CPLUSPLUSFLAGS" : ["-std=c++11"],
+            "OTHER_CPLUSPLUSFLAGS" : ["-std=c++14"],
             "MACOSX_DEPLOYMENT_TARGET": "10.7",
-            "OTHER_LDFLAGS": ["-std=c++11"],
+            "OTHER_LDFLAGS": ["-std=c++14"],
             "CLANG_CXX_LIBRARY": "libc++"
           }
         }],
