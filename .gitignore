@@ -41,5 +41,6 @@ node_modules/
 
 # Visual Studio Code directory
 .vscode
+.vs
 
 package-lock.json
