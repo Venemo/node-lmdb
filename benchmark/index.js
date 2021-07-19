@@ -23,12 +23,9 @@ function cleanup(done) {
       return done(err);
     }
     // setup clean directory
-    mkdirp(testDirPath, function(err) {
-      if (err) {
-        return done(err);
-      }
+    mkdirp(testDirPath).then(() => {
       done();
-    });
+    }, error => done(error));
   });
 }
 
