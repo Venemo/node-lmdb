@@ -115,17 +115,17 @@ describe('Node.js LMDB Bindings', function() {
       });
       dbi.close();
     });
-    it.only('will open a database, begin a transaction and get/put/delete string data containing zeros', function() {
+    it.skip('will open a database, begin a transaction and get/put/delete string data containing zeros', function() {
       var dbi = env.openDbi({
         name: 'mydb1x',
         create: true
       });
-      dbi.close();
+//      dbi.close();
       var txn = env.beginTxn({readOnly: true});
-      var dbi = env.openDbi({
+  /*    var dbi = env.openDbi({
         name: 'mydb1x',
         //txn
-      });
+      });*/
       var data = txn.getString(dbi, 'hello');
       txn.reset();
       var txn = env.beginTxn();
