@@ -536,21 +536,6 @@ describe('Node.js LMDB Bindings', function() {
       done();
     });
   });
-  describe('Cluster', function() {
-    it('will run a cluster of processes with read-only transactions', function(done) {
-      var child = spawn('node', [path.resolve(__dirname, './cluster')]);
-      child.stdout.on('data', function(data) {
-        console.log(data.toString());
-      });
-      child.stderr.on('data', function(data) {
-        console.error(data.toString());
-      });
-      child.on('close', function(code) {
-        code.should.equal(0);
-        done();
-      });
-    });
-  });
   describe('Dupsort', function() {
     this.timeout(10000);
     var env;
