@@ -1,38 +1,38 @@
-declare module 'node-lmdb' {
-  type Key = string | number | Buffer
-  type Value = string | number | Buffer | boolean
+declare module "node-lmdb" {
+  type Key = string | number | Buffer;
+  type Value = string | number | Buffer | boolean;
 
   type KeyType =
     | {
         /** if true, keys are treated as 32-bit unsigned integers */
-        keyIsUint32?: boolean
+        keyIsUint32?: boolean;
       }
     | {
         /** if true, keys are treated as Buffers */
-        keyIsBuffer?: boolean
+        keyIsBuffer?: boolean;
       }
     | {
         /** if true, keys are treated as strings */
-        keyIsString?: boolean
-      }
+        keyIsString?: boolean;
+      };
 
   type PutOptions = {
-    noDupData?: boolean
-    noOverwrite?: boolean
-    append?: boolean
-    appendDup?: boolean
-  } & KeyType
+    noDupData?: boolean;
+    noOverwrite?: boolean;
+    append?: boolean;
+    appendDup?: boolean;
+  } & KeyType;
 
   interface Stat {
-    pageSize: number
-    treeDepth: number
-    treeBranchPageCount: number
-    treeLeafPageCount: number
-    entryCount: number
-    overflowPages: number
+    pageSize: number;
+    treeDepth: number;
+    treeBranchPageCount: number;
+    treeLeafPageCount: number;
+    entryCount: number;
+    overflowPages: number;
   }
 
-  type CursorCallback<T> = (k: Key, v: T) => void
+  type CursorCallback<T> = (k: Key, v: T) => void;
 
   enum BatchResult {
     SUCCESS = 0,
@@ -45,19 +45,19 @@ declare module 'node-lmdb' {
    */
   interface BatchOperation {
     /** the database instance to target for the operation */
-    db: Dbi
+    db: Dbi;
     /** the key to target for the operation */
-    key: Key
+    key: Key;
     /** If null, treat as a DELETE operation */
-    value?: Value
+    value?: Value;
     /** If provided, ifValue must match the first X bytes of the stored value or the operation will be canceled */
-    ifValue?: Value
+    ifValue?: Value;
     /** If true, ifValue must match all bytes of the stored value or the operation will be canceled */
-    ifExactMatch?: boolean
+    ifExactMatch?: boolean;
     /** If provided, use this key to determine match for ifValue */
-    ifKey?: Key
+    ifKey?: Key;
     /** If provided, use this DB to determine match for ifValue */
-    ifDB: Dbi
+    ifDB: Dbi;
   }
 
   /**
@@ -69,43 +69,53 @@ declare module 'node-lmdb' {
   type BatchOperationArray =
     | [db: Dbi, key: Key]
     | [db: Dbi, key: Key, value: Value]
-    | [db: Dbi, key: Key, value: Value, ifValue: Value]
+    | [db: Dbi, key: Key, value: Value, ifValue: Value];
 
   /**
    * Options for opening a database instance
    */
   type DbiOptions = {
     /** the name of the database (or null to use the unnamed database) */
-    name?: string
+    name?: string;
     /** if true, the database will be created if it doesn't exist */
-    create?: boolean
+    create?: boolean;
     /** keys are strings to be compared in reverse order */
-    reverseKey?: boolean
+    reverseKey?: boolean;
     /** if true, the database can hold multiple items with the same key */
-    dupSort?: boolean
+    dupSort?: boolean;
     /** if dupSort is true, indicates that the data items are all the same size */
-    dupFixed?: boolean
+    dupFixed?: boolean;
     /** duplicate data items are also integers, and should be sorted as such */
-    integerDup?: boolean
+    integerDup?: boolean;
     /** duplicate data items should be compared as strings in reverse order */
-    reverseDup?: boolean
+    reverseDup?: boolean;
     /** if a read/write transaction is currently open, pass it here */
-    txn?: Txn
-  } & KeyType
+    txn?: Txn;
+  } & KeyType;
+
+  interface EnvOptions {
+    path?: string;
+    mapSize?: number;
+    maxDbs?: number;
+  }
+
+  interface TxnOptions {
+    readonly: boolean;
+  }
 
   class Env {
-    open(options: { path?: string; mapSize?: number; maxDbs?: number }): void
+    open(options: EnvOptions): void;
 
     /**
      * Open a database instance
      * @param {DbiOptions} options
      */
-    openDbi(options: DbiOptions): Dbi
+    openDbi(options: DbiOptions): Dbi;
 
     /**
      * Begin a transaction
      */
-    beginTxn(options?: { readOnly: boolean }): Txn
+    beginTxn(options?: TxnOptions): Txn;
 
     /**
      * Detatch from the memory-mapped object retrieved with getStringUnsafe()
@@ -113,12 +123,12 @@ declare module 'node-lmdb' {
      * before it is accessed again, or V8 will crash.
      * @param buffer
      */
-    detachBuffer(buffer: ArrayBufferLike): void
+    detachBuffer(buffer: ArrayBufferLike): void;
 
     /**
      * Retrieve Environment statistics.
      */
-    stat(): Stat
+    stat(): Stat;
 
     /**
      * When `batchWrite` is called, `node-ldmb` will asynchronously create a
@@ -141,107 +151,116 @@ declare module 'node-lmdb' {
     batchWrite(
       operations: (BatchOperation | BatchOperationArray)[],
       options?: PutOptions & {
-        progress: (results: BatchResult[]) => void
+        progress: (results: BatchResult[]) => void;
       },
       callback?: (err: Error, results: BatchResult[]) => void
-    ): void
+    ): void;
 
-    copy(path: string, compact?: boolean, callback?: (err: Error) => void): void
+    copy(
+      path: string,
+      compact?: boolean,
+      callback?: (err: Error) => void
+    ): void;
 
     /**
      * Close the environment
      */
-    close(): void
+    close(): void;
   }
+
+  type DropOptions = { txn?: Txn; justFreePages: boolean };
 
   /**
    * Database Instance: represents a single K/V store.
    */
   type Dbi = {
-    close(): void
-    drop(options?: { txn?: Txn; justFreePages: boolean }): void
-    stat(tx: Txn): Stat
-  }
+    close(): void;
+    drop(options?: DropOptions): void;
+    stat(tx: Txn): Stat;
+  };
 
   /**
    * Transaction (read-only or read-write)
    */
   type Txn = {
-    getString(dbi: Dbi, key: Key, options?: KeyType): string
-    putString(dbi: Dbi, key: Key, value: string, options?: PutOptions): void
+    getString(dbi: Dbi, key: Key, options?: KeyType): string;
+    putString(dbi: Dbi, key: Key, value: string, options?: PutOptions): void;
 
-    getBinary(dbi: Dbi, key: Key, options?: KeyType): Buffer
-    putBinary(dbi: Dbi, key: Key, value: Buffer, options?: PutOptions): void
+    getBinary(dbi: Dbi, key: Key, options?: KeyType): Buffer;
+    putBinary(dbi: Dbi, key: Key, value: Buffer, options?: PutOptions): void;
 
-    getNumber(dbi: Dbi, key: Key, options?: KeyType): number
-    putNumber(dbi: Dbi, key: Key, value: number, options?: PutOptions): void
+    getNumber(dbi: Dbi, key: Key, options?: KeyType): number;
+    putNumber(dbi: Dbi, key: Key, value: number, options?: PutOptions): void;
 
-    getBoolean(dbi: Dbi, key: Key, options?: KeyType): boolean
-    putBoolean(dbi: Dbi, key: Key, value: boolean, options?: PutOptions): void
+    getBoolean(dbi: Dbi, key: Key, options?: KeyType): boolean;
+    putBoolean(dbi: Dbi, key: Key, value: boolean, options?: PutOptions): void;
 
-    del(dbi: Dbi, key: Key, options?: KeyType): void
+    del(dbi: Dbi, key: Key, options?: KeyType): void;
 
     /**
      * Retrieve a string using zero-copy semantics. Env.detachBuffer() must
      * be called on the underlying buffer after the data is accessed.
      */
-    getStringUnsafe(dbi: Dbi, key: Key, options?: KeyType): string
+    getStringUnsafe(dbi: Dbi, key: Key, options?: KeyType): string;
 
     /**
      * Retrieve a Buffer using zero-copy semantics. Env.detachBuffer() must
      * be called on the underlying buffer after the data is accessed.
      */
-    getBinaryUnsafe(dbi: Dbi, key: Key, options?: KeyType): Buffer
+    getBinaryUnsafe(dbi: Dbi, key: Key, options?: KeyType): Buffer;
 
     /**
      * Commit and close the transaction
      */
-    commit(): void
+    commit(): void;
 
     /**
      * Abort and close the transaction
      */
-    abort(): void
+    abort(): void;
 
     /**
      * Abort a read-only transaction, but makes it renewable by calling
      * renew().
      */
-    reset(): void
+    reset(): void;
 
     /**
      * Renew a read-only transaction after it has been reset.
      */
-    renew(): void
+    renew(): void;
+  };
+
+  interface DelOptions {
+    noDupData: boolean;
   }
-
   class Cursor<T extends Key = string> {
-    constructor(txn: Txn, dbi: Dbi, keyType?: KeyType)
+    constructor(txn: Txn, dbi: Dbi, keyType?: KeyType);
 
-    goToFirst(options?: KeyType): T | null
-    goToLast(options?: KeyType): T | null
-    goToNext(options?: KeyType): T | null
-    goToPrev(options?: KeyType): T | null
-    goToKey(key: T, options?: KeyType): T | null
-    goToRange(key: T, options?: KeyType): T | null
+    goToFirst(options?: KeyType): T | null;
+    goToLast(options?: KeyType): T | null;
+    goToNext(options?: KeyType): T | null;
+    goToPrev(options?: KeyType): T | null;
+    goToKey(key: T, options?: KeyType): T | null;
+    goToRange(key: T, options?: KeyType): T | null;
 
-    goToFirstDup(options?: KeyType): T | null
-    goToLastDup(options?: KeyType): T | null
-    goToNextDup(options?: KeyType): T | null
-    goToPrevDup(options?: KeyType): T | null
-    goToDup(key: T, data: Value, options?: KeyType): T | null
-    goToDupRange(key: T, data: Value, options?: KeyType): T | null
+    goToFirstDup(options?: KeyType): T | null;
+    goToLastDup(options?: KeyType): T | null;
+    goToNextDup(options?: KeyType): T | null;
+    goToPrevDup(options?: KeyType): T | null;
+    goToDup(key: T, data: Value, options?: KeyType): T | null;
+    goToDupRange(key: T, data: Value, options?: KeyType): T | null;
 
-    getCurrentNumber(fn?: CursorCallback<number>): number | null
-    getCurrentBoolean(fn?: CursorCallback<boolean>): boolean | null
-    getCurrentString(fn?: CursorCallback<string>): string | null
-    getCurrentBinary(fn?: CursorCallback<Buffer>): Buffer | null
+    getCurrentNumber(fn?: CursorCallback<number>): number | null;
+    getCurrentBoolean(fn?: CursorCallback<boolean>): boolean | null;
+    getCurrentString(fn?: CursorCallback<string>): string | null;
+    getCurrentBinary(fn?: CursorCallback<Buffer>): Buffer | null;
 
-    getCurrentStringUnsafe(fn?: CursorCallback<string>): string | null
-    getCurrentBinaryUnsafe(fn?: CursorCallback<Buffer>): Buffer | null
+    getCurrentStringUnsafe(fn?: CursorCallback<string>): string | null;
+    getCurrentBinaryUnsafe(fn?: CursorCallback<Buffer>): Buffer | null;
 
-    del(options?: { noDupData: boolean }): void
+    del(options?: DelOptions): void;
 
-    close(): void
+    close(): void;
   }
 }
