@@ -40,6 +40,10 @@ declare module "node-lmdb" {
     NOT_FOUND = 2,
   }
 
+  type BatchOptions = {
+    progress?: (ops: BatchResult[]) => undefined;
+  } & PutOptions;
+
   /**
    * Object argument for Env.batchWrite()
    */
@@ -48,10 +52,10 @@ declare module "node-lmdb" {
     db: Dbi;
     /** the key to target for the operation */
     key: Key;
-    /** If null, treat as a DELETE operation */
-    value?: Value;
-    /** If provided, ifValue must match the first X bytes of the stored value or the operation will be canceled */
-    ifValue?: Value;
+    /** If a string, must be null-terminated. If null, treat as a DELETE operation */
+    value?: Buffer;
+    /** If provided, ifValue must match the first X bytes of the stored value or the operation will be canceled. If a string, must be null-terminated */
+    ifValue?: Buffer;
     /** If true, ifValue must match all bytes of the stored value or the operation will be canceled */
     ifExactMatch?: boolean;
     /** If provided, use this key to determine match for ifValue */
@@ -63,13 +67,13 @@ declare module "node-lmdb" {
   /**
    * Array argument for Env.batchWrite()
    * @example [db: Dbi, key: Key] // DELETE operation
-   * @example [db: Dbi, key: Key, value: Value] // PUT operation
-   * @example [db: Dbi, key: Key, value: Value, ifValue: Value] // PUT IF operation
+   * @example [db: Dbi, key: Key, value: Buffer] // PUT operation (if Value represents a string, must be null-terminated)
+   * @example [db: Dbi, key: Key, value: Buffer, ifValue: Buffer] // PUT IF operation  (if Value or ifValue represents a string, must be null-terminated)
    */
   type BatchOperationArray =
     | [db: Dbi, key: Key]
-    | [db: Dbi, key: Key, value: Value]
-    | [db: Dbi, key: Key, value: Value, ifValue: Value];
+    | [db: Dbi, key: Key, value: Buffer]
+    | [db: Dbi, key: Key, value: Buffer, ifValue: Buffer];
 
   /**
    * Options for opening a database instance
@@ -83,7 +87,7 @@ declare module "node-lmdb" {
     reverseKey?: boolean;
     /** if true, the database can hold multiple items with the same key */
     dupSort?: boolean;
-    /** if dupSort is true, indicates that the data items are all the same size */
+    /** if dupFixed is true, indicates that the data items are all the same size */
     dupFixed?: boolean;
     /** duplicate data items are also integers, and should be sorted as such */
     integerDup?: boolean;
@@ -100,7 +104,7 @@ declare module "node-lmdb" {
   }
 
   interface TxnOptions {
-    readonly: boolean;
+    readOnly: boolean;
   }
 
   class Env {
@@ -150,9 +154,7 @@ declare module "node-lmdb" {
      */
     batchWrite(
       operations: (BatchOperation | BatchOperationArray)[],
-      options?: PutOptions & {
-        progress: (results: BatchResult[]) => void;
-      },
+      options?: BatchOptions,
       callback?: (err: Error, results: BatchResult[]) => void
     ): void;
 
