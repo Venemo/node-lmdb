@@ -80,7 +80,7 @@ declare module "node-lmdb" {
    */
   type DbiOptions = {
     /** the name of the database (or null to use the unnamed database) */
-    name?: string;
+    name: string | null;
     /** if true, the database will be created if it doesn't exist */
     create?: boolean;
     /** keys are strings to be compared in reverse order */
