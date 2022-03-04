@@ -98,7 +98,7 @@ declare module "node-lmdb" {
   } & KeyType;
 
   interface EnvOptions {
-    path?: string;
+    path: string;
     mapSize?: number;
     maxDbs?: number;
   }
