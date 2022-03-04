@@ -17,9 +17,13 @@ declare module "node-lmdb" {
       };
 
   type PutOptions = {
+    /** don't write if the key and data pair already exist. Default: false */
     noDupData?: boolean;
+    /** Don't write if the key already exists. Default: false */
     noOverwrite?: boolean;
+    /** Data is being appended, don't split full pages. Default: false */
     append?: boolean;
+    /** Duplicate data is being appended, don't split full pages. Default: false */
     appendDup?: boolean;
   } & KeyType;
 
@@ -116,22 +120,18 @@ declare module "node-lmdb" {
      */
     openDbi(options: DbiOptions): Dbi;
 
-    /**
-     * Begin a transaction
-     */
+    /** Begin a transaction */
     beginTxn(options?: TxnOptions): Txn;
 
     /**
-     * Detatch from the memory-mapped object retrieved with getStringUnsafe()
+     * Detach from the memory-mapped object retrieved with getStringUnsafe()
      * or getBinaryUnsafe(). This must be called after reading the object and
      * before it is accessed again, or V8 will crash.
      * @param buffer
      */
     detachBuffer(buffer: ArrayBufferLike): void;
 
-    /**
-     * Retrieve Environment statistics.
-     */
+    /** Retrieve Environment statistics. */
     stat(): Stat;
 
     /**
@@ -211,14 +211,10 @@ declare module "node-lmdb" {
      */
     getBinaryUnsafe(dbi: Dbi, key: Key, options?: KeyType): Buffer;
 
-    /**
-     * Commit and close the transaction
-     */
+    /** Commit and close the transaction */
     commit(): void;
 
-    /**
-     * Abort and close the transaction
-     */
+    /** Abort and close the transaction */
     abort(): void;
 
     /**
@@ -227,15 +223,15 @@ declare module "node-lmdb" {
      */
     reset(): void;
 
-    /**
-     * Renew a read-only transaction after it has been reset.
-     */
+    /** Renew a read-only transaction after it has been reset. */
     renew(): void;
   };
 
   interface DelOptions {
+    /** remove all duplicate data items. */
     noDupData: boolean;
   }
+
   class Cursor<T extends Key = string> {
     constructor(txn: Txn, dbi: Dbi, keyType?: KeyType);
 
