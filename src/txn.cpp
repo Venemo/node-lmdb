@@ -295,6 +295,8 @@ Nan::NAN_METHOD_RETURN_TYPE TxnWrap::putCommon(Nan::NAN_METHOD_ARGS_TYPE info, v
 }
 
 NAN_METHOD(TxnWrap::putString) {
+    if (!info[2]->IsString())
+        return Nan::ThrowError("Value must be a string.");
     return putCommon(info, [](Nan::NAN_METHOD_ARGS_TYPE info, MDB_val &data) -> void {
         CustomExternalStringResource::writeTo(Local<String>::Cast(info[2]), &data);
     }, [](MDB_val &data) -> void {
