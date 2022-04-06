@@ -1,6 +1,6 @@
 /* mdb_load.c - memory-mapped database load tool */
 /*
- * Copyright 2011-2020 Howard Chu, Symas Corp.
+ * Copyright 2011-2021 Howard Chu, Symas Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -18,6 +18,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include "lmdb.h"
+#include "module.h"
 
 #define PRINT	1
 #define NOHDR	2
@@ -38,6 +39,8 @@ static MDB_envinfo info;
 
 static MDB_val kbuf, dbuf;
 static MDB_val k0buf;
+
+static unsigned int pagesize;
 
 #define Yu	MDB_PRIy(u)
 
@@ -125,6 +128,17 @@ static void readhdr(void)
 			if (i != 1) {
 				fprintf(stderr, "%s: line %"Yu": invalid maxreaders %s\n",
 					prog, lineno, (char *)dbuf.mv_data+STRLENOF("maxreaders="));
+				exit(EXIT_FAILURE);
+			}
+		} else if (!strncmp(dbuf.mv_data, "db_pagesize=", STRLENOF("db_pagesize="))) {
+			int i;
+			ptr = memchr(dbuf.mv_data, '\n', dbuf.mv_size);
+			if (ptr) *ptr = '\0';
+			i = sscanf((char *)dbuf.mv_data+STRLENOF("db_pagesize="),
+				"%u", &pagesize);
+			if (i != 1) {
+				fprintf(stderr, "%s: line %"Yu": invalid pagesize %s\n",
+					prog, lineno, (char *)dbuf.mv_data+STRLENOF("db_pagesize="));
 				exit(EXIT_FAILURE);
 			}
 		} else {
@@ -276,7 +290,7 @@ badend:
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: %s [-V] [-a] [-f input] [-n] [-s name] [-N] [-T] dbpath\n", prog);
+	fprintf(stderr, "usage: %s [-V] [-a] [-f input] [-n] [-m module [-w password]] [-s name] [-N] [-T] dbpath\n", prog);
 	exit(EXIT_FAILURE);
 }
 
@@ -296,6 +310,8 @@ int main(int argc, char *argv[])
 	int envflags = MDB_NOSYNC, putflags = 0;
 	int dohdr = 0, append = 0;
 	MDB_val prevk;
+	char *module = NULL, *password = NULL, *errmsg;
+	void *mlm = NULL;
 
 	prog = argv[0];
 
@@ -311,7 +327,7 @@ int main(int argc, char *argv[])
 	 * -T: read plaintext
 	 * -V: print version and exit
 	 */
-	while ((i = getopt(argc, argv, "af:ns:NTV")) != EOF) {
+	while ((i = getopt(argc, argv, "af:m:ns:w:NTV")) != EOF) {
 		switch(i) {
 		case 'V':
 			printf("%s\n", MDB_VERSION_STRING);
@@ -339,6 +355,12 @@ int main(int argc, char *argv[])
 		case 'T':
 			mode |= NOHDR | PRINT;
 			break;
+		case 'm':
+			module = optarg;
+			break;
+		case 'w':
+			password = optarg;
+			break;
 		default:
 			usage();
 		}
@@ -359,6 +381,13 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "mdb_env_create failed, error %d %s\n", rc, mdb_strerror(rc));
 		return EXIT_FAILURE;
 	}
+	if (module) {
+		mlm = mlm_setup(env, module, password, &errmsg);
+		if (!mlm) {
+			fprintf(stderr, "Failed to load crypto module: %s\n", errmsg);
+			goto env_close;
+		}
+	}
 
 	mdb_env_set_maxdbs(env, 2);
 
@@ -367,6 +396,9 @@ int main(int argc, char *argv[])
 
 	if (info.me_mapsize)
 		mdb_env_set_mapsize(env, info.me_mapsize);
+
+	if (pagesize)
+		mdb_env_set_pagesize(env, pagesize);
 
 	if (info.me_mapaddr)
 		envflags |= MDB_FIXEDMAP;
@@ -399,9 +431,9 @@ int main(int argc, char *argv[])
 			goto env_close;
 		}
 
-		rc = mdb_open(txn, subname, flags|MDB_CREATE, &dbi);
+		rc = mdb_dbi_open(txn, subname, flags|MDB_CREATE, &dbi);
 		if (rc) {
-			fprintf(stderr, "mdb_open failed, error %d %s\n", rc, mdb_strerror(rc));
+			fprintf(stderr, "mdb_dbi_open failed, error %d %s\n", rc, mdb_strerror(rc));
 			goto txn_abort;
 		}
 		prevk.mv_size = 0;
@@ -426,6 +458,10 @@ int main(int argc, char *argv[])
 			if (rc) {
 				fprintf(stderr, "%s: line %"Yu": failed to read key value\n", prog, lineno);
 				goto txn_abort;
+			}
+			if (!key.mv_size) {
+				fprintf(stderr, "%s: line %"Yu": zero-length key(ignored)\n", prog, lineno);
+				continue;
 			}
 
 			if (append) {
@@ -487,6 +523,8 @@ txn_abort:
 	mdb_txn_abort(txn);
 env_close:
 	mdb_env_close(env);
+	if (mlm)
+		mlm_unload(mlm);
 
 	return rc ? EXIT_FAILURE : EXIT_SUCCESS;
 }
