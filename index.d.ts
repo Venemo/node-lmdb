@@ -36,6 +36,15 @@ declare module "node-lmdb" {
     overflowPages: number;
   }
 
+  interface EnvInfo {
+    mapAddress: number;
+    mapSize: number;
+    lastPageNumber: number;
+    lastTxnId: number;
+    maxReaders: number;
+    numReaders: number;
+  }
+
   type CursorCallback<T> = (k: Key, v: T) => void;
 
   enum BatchResult {
@@ -163,6 +172,12 @@ declare module "node-lmdb" {
       compact?: boolean,
       callback?: (err: Error) => void
     ): void;
+
+    /** Update the size of the memory map */
+    resize(size: number): void;
+
+    /** Returns environment information */
+    info(): EnvInfo;
 
     /**
      * Close the environment
