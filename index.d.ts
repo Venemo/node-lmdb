@@ -17,9 +17,13 @@ declare module "node-lmdb" {
       };
 
   type PutOptions = {
+    /** don't write if the key and data pair already exist. Default: false */
     noDupData?: boolean;
+    /** Don't write if the key already exists. Default: false */
     noOverwrite?: boolean;
+    /** Data is being appended, don't split full pages. Default: false */
     append?: boolean;
+    /** Duplicate data is being appended, don't split full pages. Default: false */
     appendDup?: boolean;
   } & KeyType;
 
@@ -32,6 +36,15 @@ declare module "node-lmdb" {
     overflowPages: number;
   }
 
+  interface EnvInfo {
+    mapAddress: number;
+    mapSize: number;
+    lastPageNumber: number;
+    lastTxnId: number;
+    maxReaders: number;
+    numReaders: number;
+  }
+
   type CursorCallback<T> = (k: Key, v: T) => void;
 
   enum BatchResult {
@@ -39,6 +52,10 @@ declare module "node-lmdb" {
     CONDITION_NOT_MET = 1,
     NOT_FOUND = 2,
   }
+
+  type BatchOptions = {
+    progress?: (ops: BatchResult[]) => undefined;
+  } & PutOptions;
 
   /**
    * Object argument for Env.batchWrite()
@@ -48,10 +65,10 @@ declare module "node-lmdb" {
     db: Dbi;
     /** the key to target for the operation */
     key: Key;
-    /** If null, treat as a DELETE operation */
-    value?: Value;
-    /** If provided, ifValue must match the first X bytes of the stored value or the operation will be canceled */
-    ifValue?: Value;
+    /** If a string, must be null-terminated. If null, treat as a DELETE operation */
+    value?: Buffer;
+    /** If provided, ifValue must match the first X bytes of the stored value or the operation will be canceled. If a string, must be null-terminated */
+    ifValue?: Buffer;
     /** If true, ifValue must match all bytes of the stored value or the operation will be canceled */
     ifExactMatch?: boolean;
     /** If provided, use this key to determine match for ifValue */
@@ -63,27 +80,27 @@ declare module "node-lmdb" {
   /**
    * Array argument for Env.batchWrite()
    * @example [db: Dbi, key: Key] // DELETE operation
-   * @example [db: Dbi, key: Key, value: Value] // PUT operation
-   * @example [db: Dbi, key: Key, value: Value, ifValue: Value] // PUT IF operation
+   * @example [db: Dbi, key: Key, value: Buffer] // PUT operation (if Value represents a string, must be null-terminated)
+   * @example [db: Dbi, key: Key, value: Buffer, ifValue: Buffer] // PUT IF operation  (if Value or ifValue represents a string, must be null-terminated)
    */
   type BatchOperationArray =
     | [db: Dbi, key: Key]
-    | [db: Dbi, key: Key, value: Value]
-    | [db: Dbi, key: Key, value: Value, ifValue: Value];
+    | [db: Dbi, key: Key, value: Buffer]
+    | [db: Dbi, key: Key, value: Buffer, ifValue: Buffer];
 
   /**
    * Options for opening a database instance
    */
   type DbiOptions = {
     /** the name of the database (or null to use the unnamed database) */
-    name?: string;
+    name: string | null;
     /** if true, the database will be created if it doesn't exist */
     create?: boolean;
     /** keys are strings to be compared in reverse order */
     reverseKey?: boolean;
     /** if true, the database can hold multiple items with the same key */
     dupSort?: boolean;
-    /** if dupSort is true, indicates that the data items are all the same size */
+    /** if dupFixed is true, indicates that the data items are all the same size */
     dupFixed?: boolean;
     /** duplicate data items are also integers, and should be sorted as such */
     integerDup?: boolean;
@@ -94,13 +111,13 @@ declare module "node-lmdb" {
   } & KeyType;
 
   interface EnvOptions {
-    path?: string;
+    path: string;
     mapSize?: number;
     maxDbs?: number;
   }
 
   interface TxnOptions {
-    readonly: boolean;
+    readOnly: boolean;
   }
 
   class Env {
@@ -112,22 +129,18 @@ declare module "node-lmdb" {
      */
     openDbi(options: DbiOptions): Dbi;
 
-    /**
-     * Begin a transaction
-     */
+    /** Begin a transaction */
     beginTxn(options?: TxnOptions): Txn;
 
     /**
-     * Detatch from the memory-mapped object retrieved with getStringUnsafe()
+     * Detach from the memory-mapped object retrieved with getStringUnsafe()
      * or getBinaryUnsafe(). This must be called after reading the object and
      * before it is accessed again, or V8 will crash.
      * @param buffer
      */
     detachBuffer(buffer: ArrayBufferLike): void;
 
-    /**
-     * Retrieve Environment statistics.
-     */
+    /** Retrieve Environment statistics. */
     stat(): Stat;
 
     /**
@@ -150,9 +163,7 @@ declare module "node-lmdb" {
      */
     batchWrite(
       operations: (BatchOperation | BatchOperationArray)[],
-      options?: PutOptions & {
-        progress: (results: BatchResult[]) => void;
-      },
+      options?: BatchOptions,
       callback?: (err: Error, results: BatchResult[]) => void
     ): void;
 
@@ -161,6 +172,12 @@ declare module "node-lmdb" {
       compact?: boolean,
       callback?: (err: Error) => void
     ): void;
+
+    /** Update the size of the memory map */
+    resize(size: number): void;
+
+    /** Returns environment information */
+    info(): EnvInfo;
 
     /**
      * Close the environment
@@ -209,14 +226,10 @@ declare module "node-lmdb" {
      */
     getBinaryUnsafe(dbi: Dbi, key: Key, options?: KeyType): Buffer;
 
-    /**
-     * Commit and close the transaction
-     */
+    /** Commit and close the transaction */
     commit(): void;
 
-    /**
-     * Abort and close the transaction
-     */
+    /** Abort and close the transaction */
     abort(): void;
 
     /**
@@ -225,15 +238,15 @@ declare module "node-lmdb" {
      */
     reset(): void;
 
-    /**
-     * Renew a read-only transaction after it has been reset.
-     */
+    /** Renew a read-only transaction after it has been reset. */
     renew(): void;
   };
 
   interface DelOptions {
+    /** remove all duplicate data items. */
     noDupData: boolean;
   }
+
   class Cursor<T extends Key = string> {
     constructor(txn: Txn, dbi: Dbi, keyType?: KeyType);
 
