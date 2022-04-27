@@ -100,7 +100,7 @@ declare module "node-lmdb" {
   }
 
   interface TxnOptions {
-    readonly: boolean;
+    readOnly: boolean;
   }
 
   class Env {
