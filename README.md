@@ -16,7 +16,7 @@ We support **zero-copy** retrieval of **string** and **binary** values. Binary v
 
 ### About LMDB
 
-Here are the main highlights of LMDB, for more, visit http://symas.com/mdb :)
+Here are the main highlights of LMDB, for more, visit https://www.symas.com/lmdb :)
 
 * Key-value store, NoSQL
 * In-process, no need to squeeze your data through a socket
