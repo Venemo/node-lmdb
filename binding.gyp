@@ -3,7 +3,8 @@
       "os_linux_compiler%": "gcc",
       "use_vl32%": "false",
       "use_fixed_size%": "false",
-      "use_posix_semaphores%": "false"
+      "use_posix_semaphores%": "false",
+      "openssl_fips": ""
   },
   "targets": [
     {
