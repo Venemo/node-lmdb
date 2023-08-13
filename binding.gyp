@@ -57,9 +57,9 @@
             }]
           ],
           "xcode_settings": {
-            "OTHER_CPLUSPLUSFLAGS" : ["-std=c++14"],
+            "OTHER_CPLUSPLUSFLAGS" : ["-std=c++17"],
             "MACOSX_DEPLOYMENT_TARGET": "10.7",
-            "OTHER_LDFLAGS": ["-std=c++14"],
+            "OTHER_LDFLAGS": ["-std=c++17"],
             "CLANG_CXX_LIBRARY": "libc++"
           }
         }],
