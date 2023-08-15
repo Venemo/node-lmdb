@@ -33,11 +33,12 @@
   "scripts": {
     "install": "node-gyp-build",
     "recompile": "node-gyp build",
-    "before-publish": "prebuildify-ci download && prebuildify --target 20.0.0 && prebuildify --target 18.0.0 && prebuildify --target 17.1.0 && prebuildify --target 16.13.0 && prebuildify --target 15.5.0 && prebuildify --target 14.17.6 && prebuildify --target 12.22.7 && prebuildify --target electron@15.2.0",
-    "prebuild": "prebuildify --target 20.0.0 && prebuildify --target 18.0.0 && prebuildify --target 17.1.0 && prebuildify --target 16.13.0 && prebuildify --target 15.5.0 && prebuildify --target 14.17.6 && prebuildify --target 12.22.7 && prebuildify --target electron@15.2.0",
-    "prebuild-musl": "prebuildify --target 20.0.0 --libc musl --tag-libc && prebuildify --target 18.0.0 --libc musl --tag-libc && prebuildify --target 17.1.0 --libc musl --tag-libc && prebuildify --target 16.13.0 --libc musl --tag-libc && prebuildify --target 14.17.6 --libc musl --tag-libc && prebuildify --target 12.22.7 --libc musl --tag-libc",
-    "prebuild-arm64": "prebuildify --arch=arm64 --target 20.0.0 --libc musl && prebuildify --arch=arm64 --target 18.0.0 --libc musl && prebuildify --arch=arm64 --target 17.1.0 --libc musl && prebuildify --arch=arm64 --target 16.13.0 && prebuildify --arch=arm64 --target 14.17.6 && prebuildify --arch=arm64 --target electron@15.2.0",
-    "test": "./node_modules/.bin/mocha test/**.test.js --recursive",
+    "before-publish": "prebuildify-ci download && prebuildify -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "prebuild": "prebuildify -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "prebuild-linux-x64": "prebuildify-cross -i centos7-devtoolset7 -i alpine -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "prebuild-linux-arm64-glibc": "prebuildify-cross --tag-libc -i linux-arm64-lts -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "prebuild-linux-arm64-musl": "prebuildify-cross --libc musl --tag-libc -i linux-arm64-musl -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "test": "mocha test/**.test.js --recursive",
     "benchmark": "node ./benchmark/index.js"
   },
   "gypfile": true,
@@ -53,6 +54,7 @@
     "node-gyp": "^9.4.0",
     "prebuildify": "^5.0.0",
     "prebuildify-ci": "^1.0.5",
+    "prebuildify-cross": "^5.0.0",
     "rimraf": "^3.0.2",
     "jshint": "^2.12.0"
   }
