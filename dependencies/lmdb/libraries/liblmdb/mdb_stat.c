@@ -1,6 +1,6 @@
 /* mdb_stat.c - memory-mapped database status tool */
 /*
- * Copyright 2011-2020 Howard Chu, Symas Corp.
+ * Copyright 2011-2021 Howard Chu, Symas Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -16,15 +16,14 @@
 #include <string.h>
 #include <unistd.h>
 #include "lmdb.h"
+#include "module.h"
 
 #define Z	MDB_FMT_Z
 #define Yu	MDB_PRIy(u)
 
 static void prstat(MDB_stat *ms)
 {
-#if 0
 	printf("  Page size: %u\n", ms->ms_psize);
-#endif
 	printf("  Tree depth: %u\n", ms->ms_depth);
 	printf("  Branch pages: %"Yu"\n",   ms->ms_branch_pages);
 	printf("  Leaf pages: %"Yu"\n",     ms->ms_leaf_pages);
@@ -34,7 +33,7 @@ static void prstat(MDB_stat *ms)
 
 static void usage(char *prog)
 {
-	fprintf(stderr, "usage: %s [-V] [-n] [-e] [-r[r]] [-f[f[f]]] [-v] [-a|-s subdb] dbpath\n", prog);
+	fprintf(stderr, "usage: %s [-V] [-n] [-e] [-r[r]] [-f[f[f]]] [-v] [-m module [-w password]] [-a|-s subdb] dbpath\n", prog);
 	exit(EXIT_FAILURE);
 }
 
@@ -50,6 +49,8 @@ int main(int argc, char *argv[])
 	char *envname;
 	char *subname = NULL;
 	int alldbs = 0, envinfo = 0, envflags = 0, freinfo = 0, rdrinfo = 0;
+	char *module = NULL, *password = NULL, *errmsg;
+	void *mlm = NULL;
 
 	if (argc < 2) {
 		usage(prog);
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
 	 * -V: print version and exit
 	 * (default) print stat of only the main DB
 	 */
-	while ((i = getopt(argc, argv, "Vaefnrs:v")) != EOF) {
+	while ((i = getopt(argc, argv, "Vaefm:nrs:vw:")) != EOF) {
 		switch(i) {
 		case 'V':
 			printf("%s\n", MDB_VERSION_STRING);
@@ -96,6 +97,12 @@ int main(int argc, char *argv[])
 				usage(prog);
 			subname = optarg;
 			break;
+		case 'm':
+			module = optarg;
+			break;
+		case 'w':
+			password = optarg;
+			break;
 		default:
 			usage(prog);
 		}
@@ -109,6 +116,14 @@ int main(int argc, char *argv[])
 	if (rc) {
 		fprintf(stderr, "mdb_env_create failed, error %d %s\n", rc, mdb_strerror(rc));
 		return EXIT_FAILURE;
+	}
+
+	if (module) {
+		mlm = mlm_setup(env, module, password, &errmsg);
+		if (!mlm) {
+			fprintf(stderr, "Failed to load crypto module: %s\n", errmsg);
+			goto env_close;
+		}
 	}
 
 	if (alldbs || subname) {
@@ -204,9 +219,9 @@ int main(int argc, char *argv[])
 		printf("  Free pages: %"Yu"\n", pages);
 	}
 
-	rc = mdb_open(txn, subname, 0, &dbi);
+	rc = mdb_dbi_open(txn, subname, 0, &dbi);
 	if (rc) {
-		fprintf(stderr, "mdb_open failed, error %d %s\n", rc, mdb_strerror(rc));
+		fprintf(stderr, "mdb_dbi_open failed, error %d %s\n", rc, mdb_strerror(rc));
 		goto txn_abort;
 	}
 
@@ -228,17 +243,12 @@ int main(int argc, char *argv[])
 			goto txn_abort;
 		}
 		while ((rc = mdb_cursor_get(cursor, &key, NULL, MDB_NEXT_NODUP)) == 0) {
-			char *str;
 			MDB_dbi db2;
-			if (memchr(key.mv_data, '\0', key.mv_size))
+			if (!mdb_cursor_is_db(cursor))
 				continue;
-			str = malloc(key.mv_size+1);
-			memcpy(str, key.mv_data, key.mv_size);
-			str[key.mv_size] = '\0';
-			rc = mdb_open(txn, str, 0, &db2);
+			rc = mdb_dbi_open(txn, key.mv_data, 0, &db2);
 			if (rc == MDB_SUCCESS)
-				printf("Status of %s\n", str);
-			free(str);
+				printf("Status of %s\n", (char *)key.mv_data);
 			if (rc) continue;
 			rc = mdb_stat(txn, db2, &mst);
 			if (rc) {
@@ -246,7 +256,7 @@ int main(int argc, char *argv[])
 				goto txn_abort;
 			}
 			prstat(&mst);
-			mdb_close(env, db2);
+			mdb_dbi_close(env, db2);
 		}
 		mdb_cursor_close(cursor);
 	}
@@ -254,11 +264,13 @@ int main(int argc, char *argv[])
 	if (rc == MDB_NOTFOUND)
 		rc = MDB_SUCCESS;
 
-	mdb_close(env, dbi);
+	mdb_dbi_close(env, dbi);
 txn_abort:
 	mdb_txn_abort(txn);
 env_close:
 	mdb_env_close(env);
+	if (mlm)
+		mlm_unload(mlm);
 
 	return rc ? EXIT_FAILURE : EXIT_SUCCESS;
 }
