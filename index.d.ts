@@ -151,7 +151,7 @@ declare module "node-lmdb" {
     batchWrite(
       operations: (BatchOperation | BatchOperationArray)[],
       options?: PutOptions & {
-        progress: (results: BatchResult[]) => void;
+        progress?: (results: BatchResult[]) => void;
       },
       callback?: (err: Error, results: BatchResult[]) => void
     ): void;
