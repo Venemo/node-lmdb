@@ -5,9 +5,9 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: macos-11
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm install --ignore-scripts
@@ -19,16 +19,16 @@ jobs:
           PREBUILD_ARCH: arm64
       - run: tar --create --format ustar --verbose --file=prebuild-darwin.tar -C prebuilds .
       - name: Prebuild
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: prebuild-darwin.tar
   build-linux:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm install --ignore-scripts
@@ -37,22 +37,22 @@ jobs:
       - run: npm run prebuild-linux-arm64-musl
       - run: tar --create --verbose --file=prebuild-linux.tar -C prebuilds .
       - name: Prebuild
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: prebuild-linux.tar
   build-windows:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm install --ignore-scripts
       - run: npm run prebuild
       - run: tar --create --verbose --file=prebuild-windows.tar -C prebuilds .
       - name: Prebuild
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: prebuild-windows.tar
