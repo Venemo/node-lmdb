@@ -378,5 +378,10 @@ void CursorWrap::setupExports(Local<Object> exports) {
     cursorTpl->PrototypeTemplate()->Set(Nan::New<String>("del").ToLocalChecked(), Nan::New<FunctionTemplate>(CursorWrap::del));
 
     // Set exports
-    exports->Set(Nan::GetCurrentContext(), Nan::New<String>("Cursor").ToLocalChecked(), cursorTpl->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
+    Maybe<bool> exportResult = exports->Set(Nan::GetCurrentContext(), Nan::New<String>("Cursor").ToLocalChecked(), cursorTpl->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
+    // Assert that the export succeeded.
+    // Note the comment here about the return value of V8Object::Set:
+    // > Set only return[s] Just(true) or Empty(), so if it should never fail, use result.Check().
+    // https://github.com/nodejs/node/blob/cafd44dc7eff20cfa6c36b289e24efd793d4422a/deps/v8/include/v8-object.h#L236-L244
+    exportResult.Check();
 }
