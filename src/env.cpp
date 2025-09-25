@@ -592,6 +592,16 @@ NAN_METHOD(EnvWrap::openDbi) {
 
     const unsigned argc = 2;
     Local<Value> argv[argc] = { info.This(), info[0] };
+    
+    // Ensure env has been opened.
+    // A hacky way to do that, it to check whether me_path has been set.
+    EnvWrap *ew = Nan::ObjectWrap::Unwrap<EnvWrap>(info.This());
+    const char* path = nullptr;
+    int rc = mdb_env_get_path(ew->env, &path);
+    if (path == nullptr) {
+        return Nan::ThrowError("The environment is not open.");
+    }
+    
     Nan::MaybeLocal<Object> maybeInstance = Nan::NewInstance(Nan::New(*dbiCtor), argc, argv);
 
     // Check if database could be opened
