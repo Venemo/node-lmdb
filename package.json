@@ -33,17 +33,17 @@
   "scripts": {
     "install": "node-gyp-build",
     "recompile": "node-gyp build",
-    "before-publish": "prebuildify-ci download && prebuildify -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
-    "prebuild": "prebuildify -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
-    "prebuild-linux-x64": "prebuildify-cross -i centos7-devtoolset7 -i alpine -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
-    "prebuild-linux-arm64-glibc": "prebuildify-cross --tag-libc -i linux-arm64-lts -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
-    "prebuild-linux-arm64-musl": "prebuildify-cross --libc musl --tag-libc -i linux-arm64-musl -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "before-publish": "prebuildify-ci download && prebuildify -t 24.0.0 -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "prebuild": "prebuildify -t 24.0.0 -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "prebuild-linux-x64": "prebuildify-cross -i centos7-devtoolset7 -i alpine -t 24.0.0 -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "prebuild-linux-arm64-glibc": "prebuildify-cross --tag-libc -i linux-arm64-lts -t 24.0.0 -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
+    "prebuild-linux-arm64-musl": "prebuildify-cross --libc musl --tag-libc -i linux-arm64-musl -t 24.0.0 -t 20.0.0 -t 18.0.0 -t 17.1.0 -t 16.13.0 -t 15.5.0 -t 14.17.6 -t 12.22.7 -t electron@15.2.0",
     "test": "mocha test/**.test.js --recursive",
     "benchmark": "node ./benchmark/index.js"
   },
   "gypfile": true,
   "dependencies": {
-    "nan": "^2.19.0",
+    "nan": "^2.25.0",
     "node-gyp-build": "^4.8.1"
   },
   "devDependencies": {
