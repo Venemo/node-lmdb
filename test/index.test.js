@@ -1025,6 +1025,25 @@ describe('Node.js LMDB Bindings', function() {
       });
     });
   });
+  describe('Shared environments', function() {
+    this.timeout(10000);
+    it('will keep a shared environment alive while another Env still uses it', function(done) {
+      var child = spawn('node', [path.resolve(__dirname, './sharedenv')]);
+      child.stdout.on('data', function(data) {
+        console.log(data.toString());
+      });
+      child.stderr.on('data', function(data) {
+        console.error(data.toString());
+      });
+      child.on('close', function(code, signal) {
+        // A dangling environment pointer kills the child with a signal
+        // instead of a non-zero exit code, so report that explicitly.
+        should.equal(signal, null, 'child was killed by ' + signal);
+        code.should.equal(0);
+        done();
+      });
+    });
+  });
   describe('Dupsort', function () {
     this.timeout(10000);
     var env;

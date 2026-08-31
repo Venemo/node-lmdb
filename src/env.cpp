@@ -338,7 +338,9 @@ NAN_METHOD(EnvWrap::open) {
     Local<String> path = Local<String>::Cast(options->Get(Nan::GetCurrentContext(), Nan::New<String>("path").ToLocalChecked()).ToLocalChecked());
     Nan::Utf8String charPath(path);
     uv_mutex_lock(envsLock);
-    for (env_path_t envPath : envs) {
+    // Iterate by reference, otherwise the reference count below is incremented
+    // on a copy and close() frees an environment that is still in use.
+    for (env_path_t& envPath : envs) {
         char* existingPath = envPath.path;
         if (!strcmp(existingPath, *charPath)) {
             envPath.count++;
